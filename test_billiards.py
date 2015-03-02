@@ -68,21 +68,25 @@ def test_s_theta_to_vector():
 	assert_true( abs( teststadium.s_theta_to_vector(0,-pi/4)[1]-teststadium.s_theta_to_vector(0,7*pi/4)[1] ) < EPSILON )
 
 def test_reflection():
-	''' checks, if outgoing 'equals'(up to sign) incoming angle '''
+	''' checks, if outgoing 'equals'(up to sign) incoming angle and if double-reflection results in the initial condition'''
 
 	radius=2
 	length=4
 	teststadium=billiards.stadium(radius, length)
 
+	#arbitrary point of reflection:
 	s=0.14
 	reflection_point=teststadium.cartesian_coordinates(s)
 
+	#arbitrary initial theta the 2*pi is here because reflect() expect an incoming ray:
 	incoming_theta=2*pi-.3*pi
 	incoming=teststadium.s_theta_to_vector(s,incoming_theta)
-	outgoing_theta,outgoing=teststadium.reflect(incoming, reflection_point)
 
+	# reflect once and check if angle behaves correctly
+	outgoing_theta,outgoing=teststadium.reflect(incoming, reflection_point)
 	assert_true( abs(cos(incoming_theta)-cos(-outgoing_theta)) < EPSILON )
-	
+
+	#reflect again and check if we end up where we started:
 	re_re_theta,re_re =teststadium.reflect(outgoing, reflection_point)
 	assert_true( abs(re_re_theta-incoming_theta) < EPSILON )
 	assert_true( abs(re_re[0]-incoming[0]) < EPSILON )
