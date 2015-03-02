@@ -35,8 +35,6 @@ class billiard:
 			return v
 		else: 
 			return v/norm
-	
-
 
 class stadium(billiard):
 	def __init__(self, radius, length):
@@ -68,13 +66,23 @@ class stadium(billiard):
 		else:
 			xy = [self.boundary_length-s_not_normalised,0]
 		return xy
-	
-	def __normal_vector_s(self, s):
+
+	def s_theta_to_vector(self,s,theta):
+		''' returns an unit vector in directoin of a ray with billiard-coordinates(s,theta)
+			theta is measured from the incoming ray to the normal vector and from the normal vector to the outgoing ray
+			we use that nv.dot(outgoing_vector)==cos(theta)
+			and nv.cross(outgoing_vector)==sin(theta) and therefore:'''
+		[st,ct] = [sin(theta),cos(theta)]
+		[nx,ny] = self.normal_vector_s(s)
+		outgoing_vector = [nx*ct-ny*st,ny*ct+nx*st]
+		return outgoing_vector
+
+	def normal_vector_s(self, s):
 		''' returns the normal vector pointing inside the billiard at a point on the boundary given by s'''
-		[x,y] = cartesian_coordinates(self.length, self.radius, s)
-		return normal_vector(self.length, self.radius, x, y)
+		[x,y] = self.cartesian_coordinates(s)
+		return self.normal_vector(x, y)
 	
-	def __normal_vector(self, x, y):
+	def normal_vector(self, x, y):
 		''' returns the normal vector pointing inside the billiard at a point on the boundary given by (x,y)'''
 	
 		half_length = self.length/2
@@ -92,7 +100,7 @@ class stadium(billiard):
 			nv = normalised_vector(nv)
 		return np.array(nv)
 	
-	def __reflect(self, incoming_vector, reflection_point):
+	def reflect(self, incoming_vector, reflection_point):
 		''' returns the angle of incident to the normal and a unit vector of the reflection-image of incoming_vector,
 			reflected at (x,y) of the reflection_point.'''
 		#https://en.wikipedia.org/wiki/Specular_reflection#Direction_of_reflection
@@ -109,7 +117,7 @@ class stadium(billiard):
 		
 		return angle_of_incident, normalised_vector(outgoing_vector)
 	
-	def __next_intersection_point(self, outgoing_vector, reflection_point):
+	def next_intersection_point(self, outgoing_vector, reflection_point):
 	    
 		#first, check trvial cases. i.e. BB-orbits:
 		if outgoing_vector[0]==0 and outgoing_vector[1]<0:

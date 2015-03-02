@@ -21,22 +21,17 @@ from __future__ import division, print_function
 	along with pyopsys.  If not, see <http://www.gnu.org/licenses/>.
 '''
 from nose.tools import assert_equals, assert_true
-from math import sqrt
+from math import sqrt,pi
 import billiards
 
+# EPSILON is the maximum distance between two floats that they are still considered equal:
 EPSILON=1.e-15
 
-def test_stadium_init():
-	radius=2.3
-	length=4.5
-	teststadium=billiards.stadium(radius, length)
-	assert_equals(teststadium.radius,radius)
-	assert_equals(teststadium.length,length)
-
 def test_stadium_cartesian_coordinates():
+	''' Checks for if the output of cartesian_coordiates() is on the billiard boundary. '''
 	radius=2
 	length=4
-	teststadium=billiards.stadium(radius, length)
+	teststadium=billiards.stadium( radius, length )
 	
 	s_number=200
 	s_values=[i/(s_number-1) for i in range(s_number)]
@@ -53,4 +48,20 @@ def test_stadium_cartesian_coordinates():
 			distance_to_right_center=sqrt((x-length/2)**2+(y-radius)**2)
 			assert_true( abs(distance_to_right_center-radius)<=EPSILON )
 
+def test_s_theta_to_vector():
+	''' A number of thests to check if the conversion from (s,theta) to (s,direction-vector) works. '''
+	radius=2
+	length=4
+	teststadium=billiards.stadium(radius, length)
 
+	# 45° to the left of the unit vector:
+	assert_true( abs( teststadium.s_theta_to_vector(0,pi/4)[0]+1/sqrt(2.) ) < EPSILON )
+	assert_true( abs( teststadium.s_theta_to_vector(0,pi/4)[1]-1/sqrt(2.) ) < EPSILON )
+
+	# 45° to the right of the unit vector:
+	assert_true( abs( teststadium.s_theta_to_vector(0,-pi/4)[0]-1/sqrt(2.) ) < EPSILON )
+	assert_true( abs( teststadium.s_theta_to_vector(0,-pi/4)[1]-1/sqrt(2.) ) < EPSILON )
+
+	# check if negative values work as expected:
+	assert_true( abs( teststadium.s_theta_to_vector(0,-pi/4)[0]-teststadium.s_theta_to_vector(0,7*pi/4)[0] ) < EPSILON )
+	assert_true( abs( teststadium.s_theta_to_vector(0,-pi/4)[1]-teststadium.s_theta_to_vector(0,7*pi/4)[1] ) < EPSILON )
