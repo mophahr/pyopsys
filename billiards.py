@@ -28,7 +28,7 @@ class billiard:
 	def __init__(self,dimension):
 		self.dimension = dimension
 		
-	def normalised_vector(v):
+	def normalised_vector(self,v):
 		''' returns the unit vector to the provided vector'''
 		norm = np.linalg.norm(v)
 		if norm==0: 
@@ -75,7 +75,7 @@ class stadium(billiard):
 		[st,ct] = [sin(theta),cos(theta)]
 		[nx,ny] = self.normal_vector_s(s)
 		outgoing_vector = [nx*ct-ny*st,ny*ct+nx*st]
-		return outgoing_vector
+		return np.array(outgoing_vector)
 
 	def normal_vector_s(self, s):
 		''' returns the normal vector pointing inside the billiard at a point on the boundary given by s'''
@@ -94,10 +94,10 @@ class stadium(billiard):
 				nv = [0,1]
 		elif x<-half_length:
 			nv = [-half_length-x,self.radius-y]
-			nv = normalised_vector(nv)
+			nv = self.normalised_vector(nv)
 		else:
 			nv = [half_length-x,self.radius-y]
-			nv = normalised_vector(nv)
+			nv = self.normalised_vector(nv)
 		return np.array(nv)
 	
 	def reflect(self, incoming_vector, reflection_point):
@@ -105,7 +105,7 @@ class stadium(billiard):
 			reflected at (x,y) of the reflection_point.'''
 		#https://en.wikipedia.org/wiki/Specular_reflection#Direction_of_reflection
 		#normal vector pointing towards the inside of stadium:
-		nv = normal_vector(reflection_point[0], reflection_point[1])
+		nv = self.normal_vector(reflection_point[0], reflection_point[1])
 		
 		projection_on_normal = incoming_vector.dot(nv)
 		
@@ -115,7 +115,7 @@ class stadium(billiard):
 		angle_of_incident = asin(cross_product)
 		if angle_of_incident<0: angle_of_incident = 2*pi + angle_of_incident
 		
-		return angle_of_incident, normalised_vector(outgoing_vector)
+		return angle_of_incident, self.normalised_vector(outgoing_vector)
 	
 	def next_intersection_point(self, outgoing_vector, reflection_point):
 	    
