@@ -40,139 +40,68 @@ class quantumMap:
 	
 	def __init__( self, M ):
 	self.M=M
-	self.idString="--M_"+str(M)
-	self.selectString=""
 
-	def makePropagator ( self, f, mapName, ref, inverseFourierNeeded=True):
-		print("\n\nsetting up the basic propagator")
-		self.f=f
-		self.ref=ref
-		self.mapName=mapName
-		self.idString="--"+self.mapName+"--ref_"+str(ref)+self.idString
-		print(self.idString)
-		print(" ->filling propagation matrix")
-		self.propagator=np.array([[self.f(self.M,n,m,self.ref) for n in range(self.M)] for m in range(self.M)])
-		if inverseFourierNeeded:
-			print(" ->filling inverse fourier matrix")
-			self.inv=np.array([[1/mt.sqrt(self.M)*cmt.exp(2*mt.pi*1j/self.M*(n+1/2)*(m+1/2)) for n in range(self.M)] for m in range(self.M)])      
-			print(" ->matrix product")
-			self.propagator=self.inv.dot(self.propagator)
+	#these strings are used for naming files
+	self.id_string="--M_"+str(M)
+	self.select_string=""
 
-	def makePropagator3R ( self, f, mapName, ref1, ref2, ref3, inverseFourierNeeded=True):
-		print("\n\nsetting up the basic propagator")
-		self.f=f
-		self.ref1=ref1
-		self.ref2=ref2
-		self.ref3=ref3
-		self.mapName=mapName
-		self.idString="--"+self.mapName+"--ref_"+str(ref1)+"_"+str(ref2)+"_"+str(ref3)+self.idString
-		print(self.idString)
-		print(" ->filling propagation matrix")
-		self.propagator=np.array([[self.f(self.M,n,m,self.ref1,self.ref2,self.ref3) for n in range(self.M)] for m in range(self.M)])
-		if inverseFourierNeeded:
-			print(" ->filling inverse fourier matrix")
-			self.inv=np.array([[1/mt.sqrt(self.M)*cmt.exp(2*mt.pi*1j/self.M*(n+1/2)*(m+1/2)) for n in range(self.M)] for m in range(self.M)])      
-			print(" ->matrix product")
-			self.propagator=self.inv.dot(self.propagator)
-
-	def makePropagator3R_arbitraryPhases ( self, f, mapName, ref1, ref2, ref3, chi_q, chi_p, inverseFourierNeeded=True):
-		print("\n\nsetting up the basic propagator")
-		self.f=f
-		self.ref1=ref1
-		self.ref2=ref2
-		self.ref3=ref3
-		self.mapName=mapName
-		self.idString="--"+self.mapName+"--ref_"+str(ref1)+"_"+str(ref2)+"_"+str(ref3)+self.idString
-		self.idString="--chi_q_"+str(chi_q)+"--chi_p_"+str(chi_p)+self.idString
-		print(self.idString)
-		print(" ->filling propagation matrix")
-		self.propagator=np.array([[self.f(self.M,n,m,self.ref1,self.ref2,self.ref3,chi_q,chi_p) for n in range(self.M)] for m in range(self.M)])
-		if inverseFourierNeeded:
-			print(" ->filling inverse fourier matrix")
-			self.inv=np.array([[1/mt.sqrt(self.M)*cmt.exp(2*mt.pi*1j/self.M*(n+chi_q)*(m+chi_p)) for n in range(self.M)] for m in range(self.M)])      
-			print(" ->matrix product")
-			self.propagator=self.inv.dot(self.propagator)
-
-	def setReflectivities( self, r, ElementByElement=True ):
-		'''sometimes setting up the (partial) holes outside the definition of the map is better.
-		'''
-		self.r=r
-		print("filling projection matrix")
-		self.projector=np.array([[self.r(self.M,n,m,self.ref) for n in range(self.M)] for m in range(self.M)])
-		if ElementByElement:
-			print(" ->element-by-element product")
-			self.propagator=self.propagator*self.projector
-		else:
-			print(" ->matrix product")
-			self.propagator=self.propagator.dot(self.projector)
-
-	def setReflectivities3R( self, r, ElementByElement=True ):
-		'''sometimes setting up the (partial) holes outside the definition of the map is better.
-		'''
-		self.r=r
-		print("filling projection matrix")
-		self.projector=np.array([[self.r(self.M,n,m,self.ref1, self.ref2, self.ref3) for n in range(self.M)] for m in range(self.M)])
-		if ElementByElement:
-			print(" ->element-by-element product")
-			self.propagator=self.propagator*self.projector
-		else:
-			print(" ->matrix product")
-			self.propagator=self.propagator.dot(self.projector)
-   
+	#placeholders eigenvalues/eigenvectors/etc.
+	self.eva=None
+	self.eve=None
+	self.propagator=None
 
 	#============================================================================
-	# eigen system generation:
+	# eigen system generation/manipulation:
 	#============================================================================
-	def eigenValues( self ):
-		print("calculating eigenvalues only")
-		self.eva = np.linalg.eigvals( self.propagator )
+	def eigenvalues( self ):
+		self.eva = self.eva or np.linalg.eigvals( self.propagator )
+		return self.eva
 	
-	def eigenSystem( self ):
-		print("calculating right eigensystem")
-		self.eva, self.eve = np.linalg.eig( self.propagator )
+	def eigensystem( self ):
+		if not self.eva or not self.eve:
+			self.eva, self.eve = np.linalg.eig( self.propagator )
+		return self.eva, self.eve
 	
-	def leftEigenSystem( self ):
-		print("calculating left eigensystem")
-		les = np.linalg.eig( np.conj( self.propagator ).conj().T )
-		self.leva = les[0]
-		self.leve = les[1]#.T
-	
-	def loadEigenSystem( self, eveFileName="eigenvectors", evaFileName="eigenvalues" ):
-		print("loading right eigensystem from "+eveFileName+".npy and "+evaFileName+".npy")
+	def load_eigensystem( self, eve_file_name="eigenvectors", eva_file_name="eigenvalues" ):
+		''' load right eigensystem from <eve_file_name>.npy and <eva_file_name>.npy '''
 		self.eve = np.load( eveFileName+".npy" )
 		self.eva = np.load( evaFileName+".npy" )
 	
-	def loadEigenValues( self, eveFileName="eigenvectors", evaFileName="eigenvalues" ):
-		print("loading eigenvalues from "+evaFileName+".npy")
+	def load_eigenvalues( self, eva_file_name="eigenvalues" ):
+		''' load eigenvalues from <eva_file_name>.npy '''
 		self.eva = np.load( evaFileName+".npy" )
 
-	def saveEigenSystem( self, eveFileName="eigenvectors", evaFileName="eigenvalues" ):
-		print("saving right eigensystem to "+eveFileName+".npy and "+evaFileName+".npy")
+	def save_eigensystem( self, eve_file_name="eigenvectors", eva_file_name="eigenvalues" ):
+		''' save eigensystem to <eve_file_name>.npy and <eva_file_name>.npy" '''
+		try:
+			self.eve
+		except AttributeError:
+			print("(!)failed. No or incomplete eigensystem present.")
+			sys.exit(errno.ENODATA)
+		np.save( eve_file_name, self.eve )
+		np.save( eva_file_name, self.eva )
+
+	def save_eigenvalues( self,  eva_file_name="eigenvalues" ):
+		''' save eigenvalues to <eva_file_name>.npy" '''
 		try:
 			self.eva
 		except AttributeError:
 			print("(!)failed. No eigensystem present.")
 			sys.exit(errno.ENODATA)
-		np.save( eveFileName, self.eve )
-		np.save( evaFileName, self.eva )
+		np.save( eva_file_name, self.eva )
 	
-	def convertToEnergies( self, printHumanReadable=True ):
-		print("converting to Re(E) Im(E) style")
-		try:
-			self.eva
-		except AttributeError:
-			print("(!)failed. No eigensystem present.")
-			sys.exit(errno.ENODATA)
+	def convert_to_energies( self, print_human_readable=True ):
+		''' convert radial eigenvalues to Re(E) Im(E) style '''
 		self.energies=[]
-		self.NFinite=0
+		n_finite=0
 		for i in range(self.M):
 			absmu=cmt.polar( self.eva[i] )[0]
 			if absmu>0.0:
 				ImE=mt.log( absmu )
 				ReE=cmt.log( self.eva[i]/absmu )*1j
 				self.energies.extend( [ReE+1j*ImE] )
-				self.NFinite += 1
-		writelist=[[self.energies[i].imag, self.energies[i].real] for i in range(self.NFinite)]
+				n_finite += 1
+		writelist=[[self.energies[i].imag, self.energies[i].real] for i in range(n_finite)]
 		np.savetxt( "complex_energies"+self.idString+".dat", writelist )
 	
 	
@@ -502,3 +431,79 @@ def fCatMap( M, n, m, ref ):
 	else:
 		return tmp
 
+	def makePropagator ( self, f, mapName, ref, inverseFourierNeeded=True):
+		print("\n\nsetting up the basic propagator")
+		self.f=f
+		self.ref=ref
+		self.mapName=mapName
+		self.idString="--"+self.mapName+"--ref_"+str(ref)+self.idString
+		print(self.idString)
+		print(" ->filling propagation matrix")
+		self.propagator=np.array([[self.f(self.M,n,m,self.ref) for n in range(self.M)] for m in range(self.M)])
+		if inverseFourierNeeded:
+			print(" ->filling inverse fourier matrix")
+			self.inv=np.array([[1/mt.sqrt(self.M)*cmt.exp(2*mt.pi*1j/self.M*(n+1/2)*(m+1/2)) for n in range(self.M)] for m in range(self.M)])      
+			print(" ->matrix product")
+			self.propagator=self.inv.dot(self.propagator)
+
+	def makePropagator3R ( self, f, mapName, ref1, ref2, ref3, inverseFourierNeeded=True):
+		print("\n\nsetting up the basic propagator")
+		self.f=f
+		self.ref1=ref1
+		self.ref2=ref2
+		self.ref3=ref3
+		self.mapName=mapName
+		self.idString="--"+self.mapName+"--ref_"+str(ref1)+"_"+str(ref2)+"_"+str(ref3)+self.idString
+		print(self.idString)
+		print(" ->filling propagation matrix")
+		self.propagator=np.array([[self.f(self.M,n,m,self.ref1,self.ref2,self.ref3) for n in range(self.M)] for m in range(self.M)])
+		if inverseFourierNeeded:
+			print(" ->filling inverse fourier matrix")
+			self.inv=np.array([[1/mt.sqrt(self.M)*cmt.exp(2*mt.pi*1j/self.M*(n+1/2)*(m+1/2)) for n in range(self.M)] for m in range(self.M)])      
+			print(" ->matrix product")
+			self.propagator=self.inv.dot(self.propagator)
+
+	def makePropagator3R_arbitraryPhases ( self, f, mapName, ref1, ref2, ref3, chi_q, chi_p, inverseFourierNeeded=True):
+		print("\n\nsetting up the basic propagator")
+		self.f=f
+		self.ref1=ref1
+		self.ref2=ref2
+		self.ref3=ref3
+		self.mapName=mapName
+		self.idString="--"+self.mapName+"--ref_"+str(ref1)+"_"+str(ref2)+"_"+str(ref3)+self.idString
+		self.idString="--chi_q_"+str(chi_q)+"--chi_p_"+str(chi_p)+self.idString
+		print(self.idString)
+		print(" ->filling propagation matrix")
+		self.propagator=np.array([[self.f(self.M,n,m,self.ref1,self.ref2,self.ref3,chi_q,chi_p) for n in range(self.M)] for m in range(self.M)])
+		if inverseFourierNeeded:
+			print(" ->filling inverse fourier matrix")
+			self.inv=np.array([[1/mt.sqrt(self.M)*cmt.exp(2*mt.pi*1j/self.M*(n+chi_q)*(m+chi_p)) for n in range(self.M)] for m in range(self.M)])      
+			print(" ->matrix product")
+			self.propagator=self.inv.dot(self.propagator)
+
+	def setReflectivities( self, r, ElementByElement=True ):
+		'''sometimes setting up the (partial) holes outside the definition of the map is better.
+		'''
+		self.r=r
+		print("filling projection matrix")
+		self.projector=np.array([[self.r(self.M,n,m,self.ref) for n in range(self.M)] for m in range(self.M)])
+		if ElementByElement:
+			print(" ->element-by-element product")
+			self.propagator=self.propagator*self.projector
+		else:
+			print(" ->matrix product")
+			self.propagator=self.propagator.dot(self.projector)
+
+	def setReflectivities3R( self, r, ElementByElement=True ):
+		'''sometimes setting up the (partial) holes outside the definition of the map is better.
+		'''
+		self.r=r
+		print("filling projection matrix")
+		self.projector=np.array([[self.r(self.M,n,m,self.ref1, self.ref2, self.ref3) for n in range(self.M)] for m in range(self.M)])
+		if ElementByElement:
+			print(" ->element-by-element product")
+			self.propagator=self.propagator*self.projector
+		else:
+			print(" ->matrix product")
+			self.propagator=self.propagator.dot(self.projector)
+   
