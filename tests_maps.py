@@ -3,7 +3,7 @@ from __future__ import division, print_function
 '''
 	tests for maps module
 	
-	Copyright © 2015 Moritz Schönwetter
+	Copyright © 2012-2015 Moritz Schönwetter
 	
 	This file is part of pyopsys.
 	
