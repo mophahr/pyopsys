@@ -25,9 +25,11 @@ import cmath as cmt
 import math as mt
 from math import pi
 from scipy.optimize import curve_fit
+from mpmath import jtheta
 import errno, sys
 import time
 import os
+
 
 class quantum_map:
 	'''
@@ -125,11 +127,63 @@ class quantum_map:
 	#============================================================================
 	# phase_space visualisation of selected states:
 	#============================================================================
-	def husimi_distribution( self, states, n_coherent_states=200 ):
-		''' once finished, this will return the husimi-distribution of the selected states.'''
-		pass
-	#	for m in range( n_coherent_states ): #go line by line
-	#		for n in range( n_coherent_states ):
+	def husimi_distribution( self, eigenstates, n_coherent_states=10, epsilon=1.e-1 ):
+		''' Returns the husimi-distribution of the selected states.
+			For a definition check out Arnd Bäcker's chapter on 
+			"Numerical Aspects of Eigenvalue and Eigenfunction Computations for Chaotic Quantum Systems"
+			in  "The Mathematical Aspects of Quantum Maps", Lecture Notes in Physics Volume 618, 2003, pp 91-144
+			http://link.springer.com/chapter/10.1007/3-540-37045-5_4
+			we set \theta_1=\theta_2+1/2 in (38)
+			q=m/n_coherent_states
+			p=m/n_coherent_states
+		'''	
+		#jtheta(3,Z,t)
+
+		mean_husimi = np.zeros([n_coherent_states,n_coherent_states])
+		summed_husimi = np.zeros([n_coherent_states,n_coherent_states])
+		
+		n_eigenstates = len(eigenstates)
+
+		for m in range( n_coherent_states ):
+			p = m/n_coherent_states
+			for n in range( n_coherent_states ):
+				q = n/n_coherent_states
+
+				for i in range(n_eigenstates):
+					temp_sum_value = 0
+					for j in range(self.M):
+						#j-th coefficient of i-th eigenstate:
+						c_j = eigenstates[i,j]
+						temp_summand_value = c_j
+						if abs(temp_summand_value)<epsilon:
+							continue
+						else:
+							temp_summand_value*= pow( 2*self.M, 1/4 )
+
+						if abs(temp_summand_value)<epsilon:
+							continue
+						else:
+							temp_summand_value*= cmt.exp( -pi*self.M*( q**2 - 1j*p*q ) )
+
+						if abs(temp_summand_value)<epsilon:
+							continue
+						else:
+
+							temp_summand_value*=jtheta( 3,\
+									1j*pi*self.M*( (j+1/2)/self.M - 1j/(2*self.M) - q + 1j*p ),\
+									cmt.exp(-pi*self.M) )
+
+						temp_sum_value+= temp_summand_value
+					
+
+					husimi = abs(temp_sum_value)**2
+					mean_husimi[m,n] += husimi
+					summed_husimi[m,n] +=husimi
+				
+				
+
+		return summed_husimi, mean_husimi
+
 	#			icenter = int( n/npo *self.M )
 	#			hus=np.array( [cmt.exp(-self.M*mt.pi*pow(i/self.M-n/npo,2) - 2*mt.pi*self.M*1j*m/npo*i/self.M) for i in range()] )
 	#			meanval=0
