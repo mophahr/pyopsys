@@ -25,11 +25,8 @@ import numpy as np
 import cmath as cmt
 import math as mt
 from math import pi
-from scipy.optimize import curve_fit
 from mpmath import jtheta
 import errno, sys
-import time
-import os
 
 
 class quantum_map:

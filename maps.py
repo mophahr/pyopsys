@@ -21,10 +21,10 @@ from __future__ import division, print_function
     You should have received a copy of the GNU General Public License
     along with pyopsys.  If not, see <http://www.gnu.org/licenses/>.
 '''
-from math import pi, sin, cos, sqrt, asin
-import numpy as np
-from scipy.optimize import fsolve
+from math import pi, sin
 import random
+
+import numpy as np
 
 random = random.SystemRandom()
 

@@ -22,7 +22,6 @@ from __future__ import division, print_function
 '''
 from nose.tools import assert_equals, assert_true
 from math import sqrt,pi,cos
-import numpy as np
 import billiards
 
 # EPSILON is the maximum distance between two floats that they are still considered equal:

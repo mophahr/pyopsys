@@ -20,7 +20,7 @@ from __future__ import division, print_function
     You should have received a copy of the GNU General Public License
     along with pyopsys.  If not, see <http://www.gnu.org/licenses/>.
 '''
-from math import pi,sin,cos,sqrt,asin
+from math import pi,sin,cos,asin
 import numpy as np
 from scipy.optimize import fsolve
 

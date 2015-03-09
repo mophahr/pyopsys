@@ -21,9 +21,6 @@ from __future__ import division, print_function
     along with pyopsys.  If not, see <http://www.gnu.org/licenses/>.
 '''
 from nose.tools import assert_equals, assert_true
-from math import sqrt,pi,cos
-from cmath import polar
-import numpy as np
 import quantum_maps
 
 # EPSILON is the maximum distance between two floats that they are still considered equal:
