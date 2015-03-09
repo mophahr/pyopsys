@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
-'''
+"""
     quantum_maps module
     
     Copyright © 2012-2015 Moritz Schönwetter
@@ -19,7 +19,7 @@ from __future__ import division
     
     You should have received a copy of the GNU General Public License
     along with pyopsys.  If not, see <http://www.gnu.org/licenses/>.
-'''
+"""
 import numpy as np
 import cmath as cmt
 import math as mt
@@ -29,8 +29,8 @@ import errno, sys
 
 
 class quantum_map:
-    '''
-    '''
+    """
+    """
 
     def __init__(self, M):
         self.M = M
@@ -49,16 +49,16 @@ class quantum_map:
 
     # ============================================================================
     # eigensystem aquisition:
-    #============================================================================
+    # ============================================================================
     def eigenvalues(self):
-        ''' calculate eigenvalues of self.propagator'''
+        """calculate eigenvalues of self.propagator"""
         if not self.eva_calculated:
             self.eva = np.linalg.eigvals(self.propagator())
             self.eva_calculated = True
         return self.eva
 
     def eigensystem(self):
-        ''' calculate right eigensystem of self.propagator'''
+        """calculate right eigensystem of self.propagator"""
         if not self.eva_calculated or not self.eve_calculated:
             self.eva, self.eve = np.linalg.eig(self.propagator())
             self.eva_calculated = True
@@ -67,17 +67,17 @@ class quantum_map:
 
     def load_eigensystem(self, eva_file_name="eigenvalues",
                          eve_file_name="eigenvectors"):
-        ''' load right eigensystem from <eve_file_name>.npy and <eva_file_name>.npy '''
+        """load right eigensystem from <eve_file_name>.npy and <eva_file_name>.npy """
         self.eve = np.load(eve_file_name + ".npy")
         self.eva = np.load(eva_file_name + ".npy")
 
     def load_eigenvalues(self, eva_file_name="eigenvalues"):
-        ''' load eigenvalues from <eva_file_name>.npy '''
+        """load eigenvalues from <eva_file_name>.npy """
         self.eva = np.load(eva_file_name + ".npy")
 
     def save_eigensystem(self, eva_file_name="eigenvalues",
                          eve_file_name="eigenvectors", ):
-        ''' save eigensystem to <eve_file_name>.npy and <eva_file_name>.npy" '''
+        """save eigensystem to <eve_file_name>.npy and <eva_file_name>.npy" """
         try:
             self.eve
         except AttributeError:
@@ -87,7 +87,7 @@ class quantum_map:
         np.save(eva_file_name, self.eva)
 
     def save_eigenvalues(self, eva_file_name="eigenvalues"):
-        ''' save eigenvalues to <eva_file_name>.npy" '''
+        """save eigenvalues to <eva_file_name>.npy" """
         try:
             self.eva
         except AttributeError:
@@ -95,11 +95,11 @@ class quantum_map:
             sys.exit(errno.ENODATA)
         np.save(eva_file_name, self.eva)
 
-    #============================================================================
+    # ============================================================================
     # eigensystem refining:
-    #============================================================================
+    # ============================================================================
     def convert_to_energies(self, print_human_readable=True):
-        ''' convert radial eigenvalues to Re(E) Im(E) style '''
+        """convert radial eigenvalues to Re(E) Im(E) style """
         self.energies = []
         n_finite = 0
         for i in range(self.M):
@@ -114,7 +114,7 @@ class quantum_map:
         np.savetxt("complex_energies" + self.idString + ".dat", writelist)
 
     def eigenvalues_sorted_by_modulus(self):
-        ''' sorting by |\nu| in descending order'''
+        """sorting by |\nu| in descending order"""
         eigenvalues = self.eigenvalues()
         if not self.sorted_exists:
             self.moduli = np.array(
@@ -125,12 +125,12 @@ class quantum_map:
             self.sorted_exists = True
         return self.sorted_eva
 
-    #============================================================================
+    # ============================================================================
     # phase_space visualisation of selected states:
-    #============================================================================
+    # ============================================================================
     def husimi_distribution(self, eigenstates, n_coherent_states=10,
                             epsilon=1.e-1):
-        ''' Returns the husimi-distribution of the selected states.
+        """Returns the husimi-distribution of the selected states.
             For a definition check out Arnd Bäcker's chapter on 
             "Numerical Aspects of Eigenvalue and Eigenfunction Computations for Chaotic Quantum Systems"
             in  "The Mathematical Aspects of Quantum Maps", Lecture Notes in Physics Volume 618, 2003, pp 91-144
@@ -138,7 +138,7 @@ class quantum_map:
             we set \theta_1=\theta_2+1/2 in (38)
             q=m/n_coherent_states
             p=m/n_coherent_states
-        '''
+        """
         #jtheta(3,Z,t)
 
         mean_husimi = np.zeros([n_coherent_states, n_coherent_states])
@@ -196,11 +196,11 @@ class quantum_map:
 
 
 class ternary_baker(quantum_map):
-    ''' for a definition check out
+    """for a definition check out
         M. S. and Eduardo G. Altmann 'Quantum signatures of classical multifractal measures'
         Phys. Rev. E 91, 012919 (2015)
         http://journals.aps.org/pre/abstract/10.1103/PhysRevE.91.012919
-        '''
+        """
 
     def __init__(self, M, reflectivity_center, reflectivity_left=1,
                  reflectivity_right=1):
@@ -241,11 +241,11 @@ class ternary_baker(quantum_map):
 
 
 class cat_map(quantum_map):
-    ''' from S.P. Kuznetsov
+    """from S.P. Kuznetsov
         Disheveled Arnold's cat and the problem of quantum-classic correspondence
         Physica D: Nonlinear Phenomena, Volume 137, Issues 3-4, 15 March 2000, Pages 205-227
         http://www.sciencedirect.com/science/article/pii/S0167278999001827
-        '''
+        """
 
     def __init__(self, M, reflectivity_center, reflectivity_left=1,
                  reflectivity_right=1, hole=[1 / 6, 4 / 6]):
@@ -279,9 +279,9 @@ class cat_map(quantum_map):
 
 # ===============================================================================
 # NOT USED AT THE MOMENT:
-#===============================================================================
+# ===============================================================================
 #def fMiddleThird3R_arbitraryPhases( M, n, m, ref1, ref2, ref3, chi_p=.5, chi_q=.5 ):
-#    ''' this map is not yet implemented. code is kept here for future reference ''''
+#    """this map is not yet implemented. code is kept here for future reference """'
 #    if (n<M/3 and m<M/3):
 #        return mt.sqrt(ref1)/mt.sqrt(M/3)*cmt.exp(-2*mt.pi*1j/(M/3)*(n+chi_q)*(m+chi_p))
 #    elif (n>=M/3 and n<2/3*M and m>=M/3 and m<2/3*M):

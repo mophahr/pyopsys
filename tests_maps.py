@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
-'''
+"""
     tests for maps module
     
     Copyright © 2012-2015 Moritz Schönwetter
@@ -19,7 +19,7 @@ from __future__ import division, print_function
     
     You should have received a copy of the GNU General Public License
     along with pyopsys.  If not, see <http://www.gnu.org/licenses/>.
-'''
+"""
 import maps
 
 # EPSILON is the maximum distance between two floats that they are still considered equal:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
-'''
+"""
     tests for billiards module
     
     Copyright © 2012-2015 Moritz Schönwetter
@@ -19,7 +19,7 @@ from __future__ import division, print_function
     
     You should have received a copy of the GNU General Public License
     along with pyopsys.  If not, see <http://www.gnu.org/licenses/>.
-'''
+"""
 from nose.tools import assert_equals, assert_true
 from math import sqrt, pi, cos
 import billiards
@@ -29,7 +29,7 @@ EPSILON = 1.e-15
 
 
 def test_stadium_cartesian_coordinates():
-    ''' Checks for if the output of cartesian_coordiates() is on the billiard boundary. '''
+    """Checks for if the output of cartesian_coordiates() is on the billiard boundary. """
     radius = 2
     length = 4
     teststadium = billiards.stadium(radius, length)
@@ -53,7 +53,7 @@ def test_stadium_cartesian_coordinates():
 
 
 def test_s_theta_to_vector():
-    ''' A number of thests to check if the conversion from (s,theta) to (s,direction-vector) works. '''
+    """A number of thests to check if the conversion from (s,theta) to (s,direction-vector) works."""
     radius = 2
     length = 4
     teststadium = billiards.stadium(radius, length)
@@ -78,7 +78,7 @@ def test_s_theta_to_vector():
 
 
 def test_reflection():
-    ''' checks, if outgoing 'equals'(up to sign) incoming angle and if double-reflection results in the initial condition'''
+    """checks, if outgoing 'equals'(up to sign) incoming angle and if double-reflection results in the initial condition"""
 
     radius = 2
     length = 4
@@ -88,7 +88,7 @@ def test_reflection():
     s = 0.14
     reflection_point = teststadium.cartesian_coordinates(s)
 
-    #arbitrary initial theta the 2*pi is here because reflect() expect an incoming ray:
+    # arbitrary initial theta the 2*pi is here because reflect() expect an incoming ray:
     incoming_theta = 2 * pi - .3 * pi
     incoming = teststadium.s_theta_to_vector(s, incoming_theta)
 
@@ -96,7 +96,7 @@ def test_reflection():
     outgoing_theta, outgoing = teststadium.reflect(incoming, reflection_point)
     assert_true(abs(cos(incoming_theta) - cos(-outgoing_theta)) < EPSILON)
 
-    #reflect again and check if we end up where we started:
+    # reflect again and check if we end up where we started:
     re_re_theta, re_re = teststadium.reflect(outgoing, reflection_point)
     assert_true(abs(re_re_theta - incoming_theta) < EPSILON)
     assert_true(abs(re_re[0] - incoming[0]) < EPSILON)

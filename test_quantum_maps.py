@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
-'''
+"""
     tests for quantum_maps module
     
     Copyright © 2012-2015 Moritz Schönwetter
@@ -19,7 +19,7 @@ from __future__ import division, print_function
     
     You should have received a copy of the GNU General Public License
     along with pyopsys.  If not, see <http://www.gnu.org/licenses/>.
-'''
+"""
 from nose.tools import assert_equals, assert_true
 import quantum_maps
 
@@ -28,7 +28,7 @@ EPSILON = 1.e-15
 
 
 def test_saving_and_loading():
-    ''' check if loading saving alters the values in any way '''
+    """check if loading saving alters the values in any way."""
     test_bakermap = quantum_maps.ternary_baker(27, .1)
     eval_only_before_saving = test_bakermap.eigenvalues()
     eval_before_saving, evec_before_saving = test_bakermap.eigensystem()
@@ -49,7 +49,7 @@ def test_saving_and_loading():
 
 
 def test_moduli_sorting():
-    ''' make sure things get sorted from largest to smallest |\nu|'''
+    """make sure things get sorted from largest to smallest |\nu|."""
     test_bakermap = quantum_maps.ternary_baker(27, .1)
     to_be_husimid = test_bakermap.eigensystem()[1][:10]
     print(test_bakermap.husimi_distribution(to_be_husimid))

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
-'''
+"""
     maps module
 
     Copyright © 2012-2015 Moritz Schönwetter
@@ -19,7 +19,7 @@ from __future__ import division, print_function
 
     You should have received a copy of the GNU General Public License
     along with pyopsys.  If not, see <http://www.gnu.org/licenses/>.
-'''
+"""
 from math import pi, sin
 import random
 
@@ -46,7 +46,7 @@ class standard_map(map):
         self.nonlinearity_parameter = nonlinearity_parameter
 
     def mapping(self, r):
-        ''' apply the standard map (M: r->r_next=Mr)'''
+        """apply the standard map (M: r->r_next=Mr)"""
         x = r[0]
         p = r[1]
 
