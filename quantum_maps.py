@@ -270,8 +270,8 @@ class CatMap(QuantumMap):
     def propagator(self):
         if not self.propagator_matrix_filled:
             def f(n, m):
-                tmp = 1 / mt.sqrt(M) * cmt.exp(
-                    2 * pi * 1j / M * ( m * m - m * n + n * n))
+                tmp = 1 / mt.sqrt(self.M) * cmt.exp(
+                    2 * pi * 1j / self.M * ( m * m - m * n + n * n))
                 if n < self.R2_region_lower_bound:
                     return mt.sqrt(self.R1) * tmp
                 if self.R2_region_lower_bound <= n < self.R2_region_upper_bound:
