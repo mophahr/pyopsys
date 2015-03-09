@@ -67,7 +67,7 @@ class quantum_map:
 
     def load_eigensystem(self, eva_file_name="eigenvalues",
                          eve_file_name="eigenvectors"):
-        """load right eigensystem from <eve_file_name>.npy and <eva_file_name>.npy """
+        """load right eigensystem from <eve_file_name>.npy and <eva_file_name>.npy"""
         self.eve = np.load(eve_file_name + ".npy")
         self.eva = np.load(eva_file_name + ".npy")
 
@@ -77,7 +77,7 @@ class quantum_map:
 
     def save_eigensystem(self, eva_file_name="eigenvalues",
                          eve_file_name="eigenvectors", ):
-        """save eigensystem to <eve_file_name>.npy and <eva_file_name>.npy" """
+        """save eigensystem to <eve_file_name>.npy and <eva_file_name>.npy"""
         try:
             self.eve
         except AttributeError:
@@ -154,7 +154,7 @@ class quantum_map:
                 for i in range(n_eigenstates):
                     temp_sum_value = 0
                     for j in range(self.M):
-                        #j-th coefficient of i-th eigenstate:
+                        # j-th coefficient of i-th eigenstate:
                         c_j = eigenstates[i, j]
                         temp_summand_value = c_j
                         if abs(temp_summand_value) < epsilon:
@@ -172,11 +172,10 @@ class quantum_map:
                             continue
                         else:
 
-                            temp_summand_value *= jtheta(3, \
-                                                         1j * pi * self.M * ((
-                                                                                 j + 1 / 2) / self.M - 1j / (
-                                                                                 2 * self.M) - q + 1j * p ), \
-                                                         cmt.exp(-pi * self.M))
+                            temp_summand_value *= jtheta(
+                                3, 1j * pi * self.M * ((j + 1 / 2) / self.M - 1j /
+                                                       (2 * self.M) - q + 1j * p),
+                                cmt.exp(-pi * self.M))
 
                         temp_sum_value += temp_summand_value
 
@@ -212,15 +211,14 @@ class ternary_baker(quantum_map):
     def propagator(self):
         if not self.propagator_matrix_filled:
             def f(n, m):
-                if (n < self.M / 3 and m < self.M / 3):
+                if n < self.M / 3 and m < self.M / 3:
                     return mt.sqrt(self.R1) / mt.sqrt(self.M / 3) * cmt.exp(
                         -2 * pi * 1j / (self.M / 3) * (n + 1 / 2) * (m + 1 / 2))
-                elif (
-                                        n >= self.M / 3 and n < 2 / 3 * self.M and m >= self.M / 3 and m < 2 / 3 * self.M):
+                elif self.M / 3 <= n < 2 / 3 * self.M and self.M / 3 <= m < 2 / 3 * self.M:
                     return mt.sqrt(self.R2) / mt.sqrt(self.M / 3) * cmt.exp(
                         -2 * pi * 1j / (self.M / 3) * (
                             (n - self.M / 3) + 1 / 2) * ((m - self.M / 3) + 1 / 2))
-                elif (n >= self.M * 2 / 3 and m >= self.M * 2 / 3):
+                elif n >= self.M * 2 / 3 and m >= self.M * 2 / 3:
                     return mt.sqrt(self.R3) / mt.sqrt(self.M / 3) * cmt.exp(
                         -2 * pi * 1j / (self.M / 3) * (
                             (n - 2 * self.M / 3) + 1 / 2) * (
@@ -266,8 +264,7 @@ class cat_map(quantum_map):
                     2 * pi * 1j / M * ( m * m - m * n + n * n))
                 if n < self.R2_region_lower_bound:
                     return mt.sqrt(self.R1) * tmp
-                if (
-                                n >= self.R2_region_lower_bound and n < self.R2_region_upper_bound):
+                if self.R2_region_lower_bound <= n < self.R2_region_upper_bound:
                     return mt.sqrt(self.r2) * tmp
                 else:
                     return mt.sqrt(self.R3) * tmp

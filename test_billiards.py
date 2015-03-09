@@ -40,7 +40,7 @@ def test_stadium_cartesian_coordinates():
     for s in s_values:
         [x, y] = teststadium.cartesian_coordinates(s)
 
-        if x > -length / 2 and x < length / 2:
+        if -length / 2 < x < length / 2:
             assert_true((y == 0 or abs(y - 2 * radius) < EPSILON))
         elif x <= -length / 2:
             distance_to_left_center = sqrt(
