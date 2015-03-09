@@ -23,14 +23,15 @@ from __future__ import division, print_function
 import maps
 
 # EPSILON is the maximum distance between two floats that they are still considered equal:
-EPSILON=1.e-15
+EPSILON = 1.e-15
+
 
 def test_standard_map_init():
-    teststamap=maps.standard_map( .3 )
+    teststamap = maps.standard_map(.3)
     print(teststamap.init_random_number)
     print(teststamap.random_vector())
-    print(teststamap.random_vector(limits=[[2,3],[3,4]]))
+    print(teststamap.random_vector(limits=[[2, 3], [3, 4]]))
+
 
 def test_standard_map_mapping():
     pass
-

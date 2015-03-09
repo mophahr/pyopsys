@@ -24,32 +24,32 @@ from nose.tools import assert_equals, assert_true
 import quantum_maps
 
 # EPSILON is the maximum distance between two floats that they are still considered equal:
-EPSILON=1.e-15
+EPSILON = 1.e-15
+
 
 def test_saving_and_loading():
     ''' check if loading saving alters the values in any way '''
-    test_bakermap=quantum_maps.ternary_baker( 27,.1 )
+    test_bakermap = quantum_maps.ternary_baker(27, .1)
     eval_only_before_saving = test_bakermap.eigenvalues()
     eval_before_saving, evec_before_saving = test_bakermap.eigensystem()
 
-    assert_true( (eval_before_saving == eval_only_before_saving).all() )
+    assert_true((eval_before_saving == eval_only_before_saving).all())
 
     test_bakermap.save_eigenvalues("test_eva_only")
     test_bakermap.save_eigensystem("test_eva", "test_eve")
-    
+
     test_bakermap.load_eigenvalues("test_eva_only")
     eval_only_after_saving = test_bakermap.eigenvalues()
-    assert_true( (eval_before_saving == eval_only_after_saving).all() )
+    assert_true((eval_before_saving == eval_only_after_saving).all())
 
     test_bakermap.load_eigensystem("test_eva", "test_eve")
     eval_after_saving, evec_after_saving = test_bakermap.eigensystem()
-    assert_true( (eval_before_saving == eval_after_saving).all() )
-    assert_true( (evec_before_saving == evec_after_saving).all() )
+    assert_true((eval_before_saving == eval_after_saving).all())
+    assert_true((evec_before_saving == evec_after_saving).all())
+
 
 def test_moduli_sorting():
     ''' make sure things get sorted from largest to smallest |\nu|'''
-    test_bakermap = quantum_maps.ternary_baker( 27,.1)
+    test_bakermap = quantum_maps.ternary_baker(27, .1)
     to_be_husimid = test_bakermap.eigensystem()[1][:10]
     print(test_bakermap.husimi_distribution(to_be_husimid))
-    
-
