@@ -28,7 +28,7 @@ import numpy as np
 random = random.SystemRandom()
 
 
-class map:
+class Map:
     def __init__(self, dimension):
         self.dimension = dimension
         # create a random number to check st
@@ -40,9 +40,9 @@ class map:
         return np.array([random.uniform(limit[0], limit[1]) for limit in limits])
 
 
-class standard_map(map):
+class StandardMap(Map):
     def __init__(self, nonlinearity_parameter):
-        map.__init__(self, dimension=2)
+        Map.__init__(self, dimension=2)
         self.nonlinearity_parameter = nonlinearity_parameter
 
     def mapping(self, r):
@@ -54,4 +54,3 @@ class standard_map(map):
         x_next = (x + p_next) % 1
 
         return np.array([x_next, y_next])
-

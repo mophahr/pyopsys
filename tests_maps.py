@@ -27,7 +27,7 @@ EPSILON = 1.e-15
 
 
 def test_standard_map_init():
-    teststamap = maps.standard_map(.3)
+    teststamap = maps.StandardMap(.3)
     print(teststamap.init_random_number)
     print(teststamap.random_vector())
     print(teststamap.random_vector(limits=[[2, 3], [3, 4]]))
