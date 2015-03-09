@@ -116,7 +116,7 @@ class QuantumMap:
                 n_finite += 1
         writelist = [[energies[i].imag, energies[i].real] for i in
                      range(n_finite)]
-        np.savetxt("complex_energies" + self.idString + ".dat", writelist)
+        np.savetxt("complex_energies.dat", writelist)
 
     def eigenvalues_sorted_by_modulus(self):
         """sorting by |\nu| in descending order"""
