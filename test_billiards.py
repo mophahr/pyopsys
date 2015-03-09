@@ -32,7 +32,7 @@ def test_stadium_cartesian_coordinates():
     """Checks for if the output of cartesian_coordiates() is on the billiard boundary. """
     radius = 2
     length = 4
-    teststadium = billiards.stadium(radius, length)
+    teststadium = billiards.Stadium(radius, length)
 
     s_number = 200
     s_values = [i / (s_number - 1) for i in range(s_number)]
@@ -56,7 +56,7 @@ def test_s_theta_to_vector():
     """A number of thests to check if the conversion from (s,theta) to (s,direction-vector) works."""
     radius = 2
     length = 4
-    teststadium = billiards.stadium(radius, length)
+    teststadium = billiards.Stadium(radius, length)
 
     # 45° to the left of the unit vector:
     assert_true(
@@ -82,7 +82,7 @@ def test_reflection():
 
     radius = 2
     length = 4
-    teststadium = billiards.stadium(radius, length)
+    teststadium = billiards.Stadium(radius, length)
 
     # arbitrary point of reflection:
     s = 0.14
