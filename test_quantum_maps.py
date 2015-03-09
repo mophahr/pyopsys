@@ -29,7 +29,7 @@ EPSILON = 1.e-15
 
 def test_saving_and_loading():
     """check if loading saving alters the values in any way."""
-    test_bakermap = quantum_maps.ternary_baker(27, .1)
+    test_bakermap = quantum_maps.TernaryBaker(27, .1)
     eval_only_before_saving = test_bakermap.eigenvalues()
     eval_before_saving, evec_before_saving = test_bakermap.eigensystem()
 
@@ -50,6 +50,6 @@ def test_saving_and_loading():
 
 def test_moduli_sorting():
     """make sure things get sorted from largest to smallest |\nu|."""
-    test_bakermap = quantum_maps.ternary_baker(27, .1)
+    test_bakermap = quantum_maps.TernaryBaker(27, .1)
     to_be_husimid = test_bakermap.eigensystem()[1][:10]
     print(test_bakermap.husimi_distribution(to_be_husimid))

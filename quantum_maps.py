@@ -20,18 +20,17 @@ from __future__ import division
     You should have received a copy of the GNU General Public License
     along with pyopsys.  If not, see <http://www.gnu.org/licenses/>.
 """
-import numpy as np
 import cmath as cmt
 import math as mt
+import errno
+import sys
 from math import pi
+
+import numpy as np
 from mpmath import jtheta
-import errno, sys
 
 
-class quantum_map:
-    """
-    """
-
+class QuantumMap:
     def __init__(self, M):
         self.M = M
 
@@ -46,6 +45,12 @@ class quantum_map:
         self.sorted_moduli = None
         self.sorted_eva = None
         self.sorted_exists = False
+
+    def propagator(self):
+        """
+        To be defined in subclasses.
+        """
+        raise NotImplementedError
 
     # ============================================================================
     # eigensystem aquisition:
@@ -98,18 +103,18 @@ class quantum_map:
     # ============================================================================
     # eigensystem refining:
     # ============================================================================
-    def convert_to_energies(self, print_human_readable=True):
-        """convert radial eigenvalues to Re(E) Im(E) style """
-        self.energies = []
+    def convert_to_energies(self):
+        """convert radial eigenvalues to Re(E) Im(E) style."""
+        energies = []
         n_finite = 0
         for i in range(self.M):
             absmu = cmt.polar(self.eva[i])[0]
             if absmu > 0.0:
                 ImE = mt.log(absmu)
                 ReE = cmt.log(self.eva[i] / absmu) * 1j
-                self.energies.extend([ReE + 1j * ImE])
+                energies.extend([ReE + 1j * ImE])
                 n_finite += 1
-        writelist = [[self.energies[i].imag, self.energies[i].real] for i in
+        writelist = [[energies[i].imag, energies[i].real] for i in
                      range(n_finite)]
         np.savetxt("complex_energies" + self.idString + ".dat", writelist)
 
@@ -119,9 +124,9 @@ class quantum_map:
         if not self.sorted_exists:
             self.moduli = np.array(
                 [cmt.polar(eigenvalue)[0] for eigenvalue in eigenvalues])
-            self.sort_perm = self.moduli.argsort()[::-1]
-            self.sorted_eva = eigenvalues[self.sort_perm]
-            self.sorted_moduli = self.moduli[self.sort_perm]
+            sort_perm = self.moduli.argsort()[::-1]
+            self.sorted_eva = eigenvalues[sort_perm]
+            self.sorted_moduli = self.moduli[sort_perm]
             self.sorted_exists = True
         return self.sorted_eva
 
@@ -130,14 +135,17 @@ class quantum_map:
     # ============================================================================
     def husimi_distribution(self, eigenstates, n_coherent_states=10,
                             epsilon=1.e-1):
-        """Returns the husimi-distribution of the selected states.
-            For a definition check out Arnd Bäcker's chapter on 
-            "Numerical Aspects of Eigenvalue and Eigenfunction Computations for Chaotic Quantum Systems"
-            in  "The Mathematical Aspects of Quantum Maps", Lecture Notes in Physics Volume 618, 2003, pp 91-144
-            http://link.springer.com/chapter/10.1007/3-540-37045-5_4
-            we set \theta_1=\theta_2+1/2 in (38)
-            q=m/n_coherent_states
-            p=m/n_coherent_states
+        """
+        Returns the husimi-distribution of the selected states.
+        For a definition check out Arnd Bäcker's chapter on
+        "Numerical Aspects of Eigenvalue and Eigenfunction Computations for
+        Chaotic Quantum Systems" in "The Mathematical Aspects of Quantum Maps",
+        Lecture Notes in Physics Volume 618, 2003, pp 91-144,
+        http://link.springer.com/chapter/10.1007/3-540-37045-5_4
+
+        We set \theta_1=\theta_2+1/2 in (38)
+            q = m/n_coherent_states
+            p = m/n_coherent_states
         """
         #jtheta(3,Z,t)
 
@@ -166,7 +174,7 @@ class quantum_map:
                             continue
                         else:
                             temp_summand_value *= cmt.exp(
-                                -pi * self.M * ( q ** 2 - 1j * p * q ))
+                                -pi * self.M * (q ** 2 - 1j * p * q))
 
                         if abs(temp_summand_value) < epsilon:
                             continue
@@ -194,16 +202,17 @@ class quantum_map:
     #            husimi[m,n]=meanval/ns
 
 
-class ternary_baker(quantum_map):
-    """for a definition check out
-        M. S. and Eduardo G. Altmann 'Quantum signatures of classical multifractal measures'
-        Phys. Rev. E 91, 012919 (2015)
-        http://journals.aps.org/pre/abstract/10.1103/PhysRevE.91.012919
-        """
+class TernaryBaker(QuantumMap):
+    """
+    For a definition check out M. S. and Eduardo G. Altmann
+    'Quantum signatures of classical multifractal measures',
+    Phys. Rev. E 91, 012919 (2015)
+    http://journals.aps.org/pre/abstract/10.1103/PhysRevE.91.012919
+    """
 
     def __init__(self, M, reflectivity_center, reflectivity_left=1,
                  reflectivity_right=1):
-        quantum_map.__init__(self, M)
+        QuantumMap.__init__(self, M)
         self.R1 = reflectivity_left
         self.R2 = reflectivity_center
         self.R3 = reflectivity_right
@@ -214,7 +223,8 @@ class ternary_baker(quantum_map):
                 if n < self.M / 3 and m < self.M / 3:
                     return mt.sqrt(self.R1) / mt.sqrt(self.M / 3) * cmt.exp(
                         -2 * pi * 1j / (self.M / 3) * (n + 1 / 2) * (m + 1 / 2))
-                elif self.M / 3 <= n < 2 / 3 * self.M and self.M / 3 <= m < 2 / 3 * self.M:
+                elif (self.M / 3 <= n < 2 / 3 * self.M and
+                      self.M / 3 <= m < 2 / 3 * self.M):
                     return mt.sqrt(self.R2) / mt.sqrt(self.M / 3) * cmt.exp(
                         -2 * pi * 1j / (self.M / 3) * (
                             (n - self.M / 3) + 1 / 2) * ((m - self.M / 3) + 1 / 2))
@@ -238,7 +248,7 @@ class ternary_baker(quantum_map):
         return self.propagator_matrix
 
 
-class cat_map(quantum_map):
+class CatMap(QuantumMap):
     """from S.P. Kuznetsov
         Disheveled Arnold's cat and the problem of quantum-classic correspondence
         Physica D: Nonlinear Phenomena, Volume 137, Issues 3-4, 15 March 2000, Pages 205-227
@@ -247,7 +257,7 @@ class cat_map(quantum_map):
 
     def __init__(self, M, reflectivity_center, reflectivity_left=1,
                  reflectivity_right=1, hole=[1 / 6, 4 / 6]):
-        quantum_map.__init__(self, M)
+        QuantumMap.__init__(self, M)
         if not M % 2 == 0:
             print("For cat-map M must be even!")
             sys.exit(errno.EINVAL)
