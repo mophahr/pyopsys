@@ -275,7 +275,7 @@ class CatMap(QuantumMap):
                 if n < self.R2_region_lower_bound:
                     return mt.sqrt(self.R1) * tmp
                 if self.R2_region_lower_bound <= n < self.R2_region_upper_bound:
-                    return mt.sqrt(self.r2) * tmp
+                    return mt.sqrt(self.R2) * tmp
                 else:
                     return mt.sqrt(self.R3) * tmp
 
