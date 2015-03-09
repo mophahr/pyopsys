@@ -256,7 +256,7 @@ class CatMap(QuantumMap):
         """
 
     def __init__(self, M, reflectivity_center, reflectivity_left=1,
-                 reflectivity_right=1, hole=[1 / 6, 4 / 6]):
+                 reflectivity_right=1, hole=(1 / 6, 4 / 6)):
         QuantumMap.__init__(self, M)
         if not M % 2 == 0:
             print("For cat-map M must be even!")
