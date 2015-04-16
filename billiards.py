@@ -77,6 +77,32 @@ class Stadium(Billiard):
             xy = [self.boundary_length - s_not_normalised, 0]
         return xy
 
+	def cartesian_to_s(self, cartesian):
+		x = cartesian[0]
+		y = cartesian[1]
+
+		if -self.half_length <= x <= self.half_length:
+			if y < self.radius:
+				#lower straight:
+				if x <= 0.:
+					s_not_normalised = -x
+				else:
+					s_not_normalised = self.boundary_length - x
+			else:
+				#upper straight:
+				offset = self.half_length + pi * self.radius
+				s_not_normalised = offset + (self.half_length + x)
+		elif x < -self.half_length:
+			#left half circle
+			offset = self.half_length
+			s_not_normalised = offset + arccos((self.radius - y) / self.radius) * self.radius
+		else:
+			#right half circle
+			offset = pi * self.radius + 2 * self.length
+			s_not_normalised = offset + arccos((y - self.radius) / self.radius) * self.radius
+
+		return s_not_normalised/self.boundary_length
+	
     def s_theta_to_vector(self, s, theta):
         """
         Returns an unit vector in direction of a ray with billiard-coordinates
@@ -209,3 +235,41 @@ class Stadium(Billiard):
             pass
 
         return intersection_point
+
+	def time_until_hole(s,theta,hole, use_real_time=False,max_iterations=1000):
+		"""
+		hole : [s_min, s_max, theta_min, theta_max] -- a point is in the hole when (s|theta)_min <= (s|theta) < (s|theta)_max
+		Returns the number of collisions or the trajectory length until the orbit reaches the hole.
+		It also returns the image of the endpoint inside the hole.
+		"""
+		hole_hit=False
+		collisions = 0
+
+		if use_real_time:
+			distance = 0.0
+
+		current_vector = s_theta_to_vector(s, theta)
+		current_location = cartesian_coordinates( s )
+
+		for _ in range(max_iterations):
+			#check if we're in the hole:
+			if hole[0]<= s <hole[1] and hole[2]<= theta <hole[3]:
+				hole_hit=True
+
+			if hole_hit:
+				#return stuff
+				pass
+			else:
+				#iterate:
+				if use_real_time:
+					old_location = current_location
+				current_location = next_intersection_point( current_vector, current_location)
+				theta, current_vector = reflect(current_vector, current_location )
+				s = cartesian_to_s(current_location)
+
+				collisions = collisions + 1
+				if use_real_time:
+					distance = distance + sqrt((current_location[0]-old_location[0]) ** 2 + (current_location[1]-old_location[1]) ** 2)
+		
+		
+
