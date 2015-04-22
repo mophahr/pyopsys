@@ -1,0 +1,30 @@
+
+In[43]:= rightcircle=Solve[y==m x + c&&(x-l/2)^2+(y-r)^2==r^2,{x,y}]//Simplify
+Out[43]= {{x->(l-2 c m+2 m r-Sqrt[-4 c^2-4 c l m-l^2 m^2+8 c r+4 l m r+4 m^2 r^2])/(2+2 m^2),y->(2 c+m (l+2 m r-Sqrt[-4 c^2+c (-4 l m+8 r)+m (-l^2 m+4 l r+4 m r^2)]))/(2 (1+m^2))},{x->(l-2 c m+2 m r+Sqrt[-4 c^2-4 c l m-l^2 m^2+8 c r+4 l m r+4 m^2 r^2])/(2+2 m^2),y->(2 c+m (l+2 m r+Sqrt[-4 c^2+c (-4 l m+8 r)+m (-l^2 m+4 l r+4 m r^2)]))/(2 (1+m^2))}}
+In[44]:= rightcircle[[1,1]]//InputForm
+Out[44]//InputForm=
+x -> (l - 2*c*m + 2*m*r - Sqrt[-4*c^2 - 4*c*l*m - l^2*m^2 + 8*c*r + 4*l*m*r + 4*m^2*r^2])/(2 + 2*m^2)
+In[45]:= rightcircle[[1,2]]//InputForm
+Out[45]//InputForm=
+y -> (2*c + m*(l + 2*m*r - Sqrt[-4*c^2 + c*(-4*l*m + 8*r) + m*(-(l^2*m) + 4*l*r + 4*m*r^2)]))/(2*(1 + m^2))
+In[46]:= rightcircle[[2,1]]//InputForm
+Out[46]//InputForm=
+x -> (l - 2*c*m + 2*m*r + Sqrt[-4*c^2 - 4*c*l*m - l^2*m^2 + 8*c*r + 4*l*m*r + 4*m^2*r^2])/(2 + 2*m^2)
+In[47]:= 
+rightcircle[[2,2]]//InputForm
+Out[47]//InputForm=
+y -> (2*c + m*(l + 2*m*r + Sqrt[-4*c^2 + c*(-4*l*m + 8*r) + m*(-(l^2*m) + 4*l*r + 4*m*r^2)]))/(2*(1 + m^2))
+In[50]:= leftcircle=Solve[y==m x + c&&(x+l/2)^2+(y-r)^2==r^2,{x,y}]//Simplify
+Out[50]= {{x->-((l+2 c m-2 m r+Sqrt[-4 c^2+4 c (l m+2 r)-m (l^2 m+4 l r-4 m r^2)])/(2 (1+m^2))),y->(2 c+m (-l+2 m r-Sqrt[-4 c^2+4 c (l m+2 r)-m (l^2 m+4 l r-4 m r^2)]))/(2 (1+m^2))},{x->(-l-2 c m+2 m r+Sqrt[-4 c^2+4 c (l m+2 r)-m (l^2 m+4 l r-4 m r^2)])/(2 (1+m^2)),y->(2 c+m (-l+2 m r+Sqrt[-4 c^2+4 c (l m+2 r)-m (l^2 m+4 l r-4 m r^2)]))/(2 (1+m^2))}}
+In[51]:= leftcircle[[1,1]]//InputForm
+Out[51]//InputForm=
+x -> -(l + 2*c*m - 2*m*r + Sqrt[-4*c^2 + 4*c*(l*m + 2*r) - m*(l^2*m + 4*l*r - 4*m*r^2)])/(2*(1 + m^2))
+In[53]:= leftcircle[[1,2]]//InputForm
+Out[53]//InputForm=
+y -> (2*c + m*(-l + 2*m*r - Sqrt[-4*c^2 + 4*c*(l*m + 2*r) - m*(l^2*m + 4*l*r - 4*m*r^2)]))/(2*(1 + m^2))
+In[54]:= leftcircle[[2,1]]//InputForm
+Out[54]//InputForm=
+x -> (-l - 2*c*m + 2*m*r + Sqrt[-4*c^2 + 4*c*(l*m + 2*r) - m*(l^2*m + 4*l*r - 4*m*r^2)])/(2*(1 + m^2))
+In[55]:= leftcircle[[2,2]]//InputForm
+Out[55]//InputForm=
+y -> (2*c + m*(-l + 2*m*r + Sqrt[-4*c^2 + 4*c*(l*m + 2*r) - m*(l^2*m + 4*l*r - 4*m*r^2)]))/(2*(1 + m^2))

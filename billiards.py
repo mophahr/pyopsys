@@ -20,7 +20,7 @@ from __future__ import division, print_function
     You should have received a copy of the GNU General Public License
     along with pyopsys.  If not, see <http://www.gnu.org/licenses/>.
 """
-from math import pi, sin, cos, asin, acos
+from math import pi, sin, cos, asin, acos, sqrt
 import numpy as np
 from scipy.optimize import fsolve
 
@@ -171,7 +171,7 @@ class Stadium(Billiard):
 		return angle_of_incident, self.normalised_vector(outgoing_vector)
 	
 	def next_intersection_point(self, outgoing_vector, reflection_point):
-		# first, check trvial cases. i.e. BB-orbits:
+		# first, check trvial cases. i.e. orthogonal BB-orbits:
 		if outgoing_vector[0] == 0 and outgoing_vector[1] < 0:
 			return [reflection_point[0], 0.]
 		elif outgoing_vector[0] == 0 and outgoing_vector[1] > 0:
@@ -179,61 +179,84 @@ class Stadium(Billiard):
 		if reflection_point[1] == self.radius and outgoing_vector[1] == 0:
 			return [-reflection_point[0], reflection_point[1]]
 		
-		def ray(t):
-			"""
-			Ray going from the reflection point in the direction of
-			outgoing_vector parametrised by t.
-			"""
-			assert t > 0., 'Error: ray is going backwards or stuck.'
-			return reflection_point + t * outgoing_vector
-		
-		def ray_y_down(t):
-			return ray(t)[1]
-		
-		def ray_y_up(t):
-			return ray(t)[1] - 2 * self.radius
-		
+		# bring it to easier form (y == m * x + c):
+		x0 = reflection_point[0]
+		y0 = reflection_point[1]
+		m  = outgoing_vector[1]/outgoing_vector[0] 
+		c  = y0 - m * x0
+		r  = self.radius
+		l  = self.length
+
 		# find intersections with either upper or lower extended boundary to
 		# decide what method to use to find the next intersection point:
 		if outgoing_vector[1] < 0.:
-			t_intersection = fsolve(ray_y_down, 1)
-			intersection_point = [ray(t_intersection)[0], 0.]
+			# we point downwards
+			x1 = -c / m
+			y1 = 0
 		else:
-			t_intersection = fsolve(ray_y_up, 1)
-			intersection_point = [ray(t_intersection)[0], 2 * self.radius]
+			x1 = (2 * r - c) / m
+			y1 = 2 * r
 		
-		if intersection_point[0] < -self.length / 2:
+		# now we put in the two analytical solutions from solving
+		# y == m * x +c
+		# (see [https://de.wikipedia.org/wiki/Gerade#Punkt-Richtungs-Gleichung#Bestimmung%20der%20Gleichung%20einer%20Geraden%20in%20der%20Ebene])
+		# and
+		# (x \pm l/2)^2 + (y - r)^2 == r^2
+		# for (x,y) and pick the one that's not the initial point and thats not inside the stadium
+
+		if x1 < -self.length / 2:
 			# we are on the left half circle.
-			left_center = np.array([-self.length / 2, self.radius])
-			
-			def passing_left_circle(t):
-				return np.linalg.norm(-left_center + ray(t)) - self.radius
-			
-			# something that lies outside the billiard, so that we don't intersect
-			# with the 'inner' half circle:
-			large_initial_guess = 2 * self.length + 2 * self.radius
-			t_intersection = fsolve(passing_left_circle, large_initial_guess)
-			intersection_point = ray(t_intersection)
-			assert intersection_point[0] < -self.length / 2,\
-				'Error: Intersection point is not on boundary.'
-		elif intersection_point[0] > self.length / 2:
+
+			#possible intersections:
+			xp1 = -(l + 2*c*m - 2*m*r + sqrt(-4*c**2 + 4*c*(l*m + 2*r) - m*(l**2*m + 4*l*r - 4*m*r**2)))/(2*(1 + m**2))
+			yp1 = (2*c + m*(-l + 2*m*r - sqrt(-4*c**2 + 4*c*(l*m + 2*r) - m*(l**2*m + 4*l*r - 4*m*r**2))))/(2*(1 + m**2))
+			xp2 = (-l - 2*c*m + 2*m*r + sqrt(-4*c**2 + 4*c*(l*m + 2*r) - m*(l**2*m + 4*l*r - 4*m*r**2)))/(2*(1 + m**2))
+			yp2 = (2*c + m*(-l + 2*m*r + sqrt(-4*c**2 + 4*c*(l*m + 2*r) - m*(l**2*m + 4*l*r - 4*m*r**2))))/(2*(1 + m**2))
+
+			if xp1 < -l/2 and xp2 < -l/2:
+				#both points on the left round boundary ==> use the point further away from the initial point:
+				d1 = (xp1 - x0)**2 + (yp1 - y0)**2
+				d2 = (xp2 - x0)**2 + (yp2 - y0)**2
+
+				if d1>=d2:
+					intersection_point = [xp1,yp1]
+				else:
+					intersection_point = [xp2,yp2]
+
+			elif xp1 < -l/2 and xp2 >= -l/2:
+				intersection_point = [xp1,yp1]
+
+			elif xp1 >= -l/2 and xp2 < -l/2:
+				intersection_point = [xp2,yp2]
+
+		elif x1 > self.length / 2:
 			# we are on the right half circle.
-			right_center = np.array([self.length / 2, self.radius])
-			
-			def passing_right_circle(t):
-				return np.linalg.norm(-right_center + ray(t)) - self.radius
-			
-			# something that lies outside the billiard, so that we don't intersect
-			# with the 'inner' half circle:
-			large_initial_guess = 2 * self.length + 2 * self.radius
-			t_intersection = fsolve(passing_right_circle, large_initial_guess)
-			intersection_point = ray(t_intersection)
-			assert intersection_point[0] > self.length / 2,\
-				'Error: Intersection point is not on boundary.'
-		
+
+			#possible intersections:
+			xp1 = (l - 2*c*m + 2*m*r - sqrt(-4*c**2 - 4*c*l*m - l**2*m**2 + 8*c*r + 4*l*m*r + 4*m**2*r**2))/(2 + 2*m**2)
+			yp1 = (2*c + m*(l + 2*m*r - sqrt(-4*c**2 + c*(-4*l*m + 8*r) + m*(-(l**2*m) + 4*l*r + 4*m*r**2))))/(2*(1 + m**2))
+			xp2 = (l - 2*c*m + 2*m*r + sqrt(-4*c**2 - 4*c*l*m - l**2*m**2 + 8*c*r + 4*l*m*r + 4*m**2*r**2))/(2 + 2*m**2)
+			yp2 = (2*c + m*(l + 2*m*r + sqrt(-4*c**2 + c*(-4*l*m + 8*r) + m*(-(l**2*m) + 4*l*r + 4*m*r**2))))/(2*(1 + m**2))
+
+			if xp1 > l/2 and xp2 > l/2:
+				#both points on the right round boundary ==> use the point further away from the initial point:
+				d1 = (xp1 - x0)**2 + (yp1 - y0)**2
+				d2 = (xp2 - x0)**2 + (yp2 - y0)**2
+
+				if d1>=d2:
+					intersection_point = [xp1,yp1]
+				else:
+					intersection_point = [xp2,yp2]
+
+			elif xp1 > l/2 and xp2 <= l/2:
+				intersection_point = [xp1,yp1]
+
+			elif xp1 <= l/2 and xp2 > l/2:
+				intersection_point = [xp2,yp2]
+
 		else:
-			# we hit a straight boundary and we can use the intersection_point:
-			pass
+			# we hit a straight boundary and we can use the intersection point from earlier in this function:
+			intersection_point = [x1,y1]
 		
 		return intersection_point
 	
