@@ -267,7 +267,7 @@ class Stadium(Billiard):
 		It also returns the image of the endpoint inside the hole.
 		"""
 		hole_hit=False
-		collisions = 0
+		boundary_collisions = 0
 	
 		if use_real_time:
 			distance = 0.0
@@ -280,20 +280,42 @@ class Stadium(Billiard):
 			if hole[0]<= s <hole[1] and hole[2]<= theta <hole[3]:
 				hole_hit=True
 	
+			#iterate:
+			if use_real_time:
+				old_location = current_location
+			current_location = self.next_intersection_point( current_vector, current_location)
+			theta, current_vector = self.reflect(current_vector, current_location )
+			s = self.cartesian_to_s(current_location)
+
 			if hole_hit:
 				#return stuff
 				if use_real_time:
 					return distance, (s,theta)
 				else:
-					return collisions, (s,theta)
+					return boundary_collisions, (s,theta)
 			else:
-				#iterate:
-				if use_real_time:
-					old_location = current_location
-				current_location = self.next_intersection_point( current_vector, current_location)
-				theta, current_vector = self.reflect(current_vector, current_location )
-				s = self.cartesian_to_s(current_location)
-	
-				collisions = collisions + 1
+				boundary_collisions = boundary_collisions + 1
 				if use_real_time:
 					distance = distance + sqrt((current_location[0]-old_location[0]) ** 2 + (current_location[1]-old_location[1]) ** 2)
+
+		if use_real_time:
+			return distance, current_location 
+		else:
+			return boundary_collisions, current_location
+
+	def number_of_hole_collisions(self,s,theta,hole,max_iterations=1000):
+		"""
+		returns the number of collisions with the hole
+		"""
+		collisions = 0
+		total_iterations = 0
+
+		current_location = [s,theta]
+
+		while total_iterations<max_iterations and collisions<max_iterations:
+			length, current_location = self.time_until_hole(current_location[0],current_location[1],hole,max_iterations=max_iterations)
+			total_iterations = total_iterations + length +1
+			if total_iterations<max_iterations:
+				collisions = collisions + 1
+
+		return collisions
