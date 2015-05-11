@@ -50,7 +50,7 @@ class StandardMap(Map):
 		x = r[0]
 		p = r[1]
 		
-		p_next = (p + self.nonlinearity_parameter * sin(2.0 * pi * x))
+		p_next = (p + self.nonlinearity_parameter * sin(2.0 * pi * x)) % 1
 		x_next = (x + p_next) % 1
 		
 		return np.array([x_next, p_next])
