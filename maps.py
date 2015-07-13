@@ -39,7 +39,71 @@ class Map:
         limits = limits or self.default_limits
         return np.array([random.uniform(limit[0], limit[1]) for limit in limits])
 
+class TentMap(Map):
+	def __init__(self,asymmetry_parameter=1/2, stretching_parameter=2):
+		Map.__init__(self, dimension=1)
+		self.asymmetry_parameter = asymmetry_parameter
+		if not 0<asymmetry_parameter<1:
+			raise RuntimeError("asymmetry_parameter is not in the open interval (0,1).")
 
+		#the stretching parameter (µ) defines the size s of the hole: µ==2/(1-s)
+		self.stretching_parameter = stretching_parameter
+	
+	def mapping(self,x):
+		"""
+		apply the tent map as defined in https://en.wikipedia.org/w/index.php?title=Tent_map&oldid=630575047#Asymmetric_tent_map
+		"""
+		a = self.asymmetry_parameter
+		mu = self.stretching_parameter
+
+		if x<a:
+			return x * mu / (2 * a)
+		else:
+			return (1 - x) * mu / (2 * (1 - a))
+
+	def time_until_hole(self,x, use_real_time=False, max_iterations=1000):
+		"""
+		returns the number of iterations or the traveled distance,  as well as the current position, that is needed to exit the interval [0,1].
+		"""
+		if not self.stretching_parameter>2:
+			raise RuntimeError("map is not open because the stretching_parameter<=2. See https://en.wikipedia.org/w/index.php?title=File:Tent_map.png&oldid=468455200 where it is called $\mu$")
+
+		hole_hit=False
+		iterations = 0
+	
+		current_location = x
+
+		if use_real_time:
+			distance = 0.0
+	
+		for _ in xrange(max_iterations):
+			#check if we're "in the hole":
+			if current_location>1:
+				hole_hit=True
+
+			#iterate:
+			if use_real_time:
+				old_location = current_location
+			current_location = self.mapping(current_location)
+	
+			if hole_hit:
+				#return stuff
+				if use_real_time:
+					return distance, current_location 
+				else:
+					return iterations, current_location
+			else:
+				iterations = iterations + 1
+				if use_real_time:
+					distance += abs(current_location-old_location)
+
+		if use_real_time:
+			return distance, current_location 
+		else:
+			return iterations, current_location
+
+
+			
 class StandardMap(Map):
 	def __init__(self, nonlinearity_parameter):
 		Map.__init__(self, dimension=2)
@@ -69,7 +133,7 @@ class StandardMap(Map):
 		if use_real_time:
 			distance = 0.0
 	
-		for _ in range(max_iterations):
+		for _ in xrange(max_iterations):
 			#check if we're in the hole:
 			if hole[0]<= current_location[0] <hole[1] and hole[2]<= current_location[1] <hole[3]:
 				hole_hit=True
