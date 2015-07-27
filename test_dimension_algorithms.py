@@ -22,6 +22,7 @@ from __future__ import division, print_function
 """
 from nose.tools import assert_equals, assert_true, assert_almost_equals
 import dimension_algorithms
+import maps
 import numpy as np
 import pickle
 
@@ -69,4 +70,11 @@ def test_GPA():
     rfs=[nfs[i] * e for i,e in enumerate(epsilons)]
     np.testing.assert_almost_equal(test_relative_found, rfs)
     np.testing.assert_almost_equal(test_dims, dims)
+
+def test_other():
+    testmap = maps.TentMap(.62,3)
+    dimension_algorithms.tree_bottom_up_1d(lambda x: testmap.time_until_hole(x)[0])
+    dimension_algorithms.tree_top_down_1d(lambda x: testmap.time_until_hole(x)[0])
+    dimension_algorithms.output_function_evaluation_1d(lambda x: testmap.time_until_hole(x)[0])
+    dimension_algorithms.uncertainty_method_1d(lambda x: testmap.time_until_hole(x)[0])
 

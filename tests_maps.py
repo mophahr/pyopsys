@@ -34,20 +34,20 @@ def test_standard_map_mapping():
     pass
 
 def test_tent_map():
-	testmap = maps.TentMap(.2,1.2)
-	# check special points:
-	assert_equal(testmap.mapping(0),0)
-	assert_equal(testmap.mapping(1),0)
-	assert_equal(testmap.mapping(.2),1.2/2)
+    testmap = maps.TentMap(.2,1.2)
+    # check special points:
+    assert_equal(testmap.mapping(0),0)
+    assert_equal(testmap.mapping(1),0)
+    assert_equal(testmap.mapping(.2),1.2/2)
 
 def test_tent_map_escape():
-	testmap = maps.TentMap(.2,2.2)
-	#check if escapetimes are correct:
-	assert_equal(testmap.time_until_hole(.2)[0], 1)
-	assert_equal(testmap.time_until_hole(2)[0], 0)
-	assert_equal(testmap.time_until_hole(.2, use_real_time = True)[0], 2.2/2-.2)
-	mt=100000
-	assert_equal(testmap.time_until_hole(.0, max_iterations = mt)[0], mt)
-	assert_equal(testmap.time_until_hole(1.0, max_iterations = mt)[0], mt)
+    testmap = maps.TentMap(.2,2.2)
+    #check if escapetimes are correct:
+    assert_equal(testmap.time_until_hole(.2)[0], 1)
+    assert_equal(testmap.time_until_hole(2)[0], 0)
+    assert_equal(testmap.time_until_hole(.2, use_real_time = True)[0], 2.2/2-.2)
+    mt=100000
+    assert_equal(testmap.time_until_hole(.0, max_iterations = mt)[0], mt)
+    assert_equal(testmap.time_until_hole(1.0, max_iterations = mt)[0], mt)
 
-	
+    
