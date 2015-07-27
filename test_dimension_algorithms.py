@@ -26,47 +26,47 @@ import numpy as np
 import pickle
 
 def test_binning():
-	""" Testing the conversion points->filledarray"""
-	#1D-tests:
-	points=np.array([[.5],[.75]])
-	raster=dimension_algorithms.raster(points,0.5)[1]
-	np.testing.assert_almost_equal([0,1],raster)
-	raster=dimension_algorithms.raster(points,0.25)[1]
-	np.testing.assert_almost_equal([0,0,1,1],raster)
-	#2D-tests:
-	#to_do
+    """ Testing the conversion points->filledarray"""
+    #1D-tests:
+    points=np.array([[.5],[.75]])
+    raster=dimension_algorithms.raster(points,0.5)[1]
+    np.testing.assert_almost_equal([0,1],raster)
+    raster=dimension_algorithms.raster(points,0.25)[1]
+    np.testing.assert_almost_equal([0,0,1,1],raster)
+    #2D-tests:
+    #to_do
 
 def test_box_counting():
-	test_n_filled = pickle.load(open('./test_data/test_data_box_counting_n_filled.p', 'r'))
-	test_used_epsilons = pickle.load(open('./test_data/test_data_box_counting_used_epsilons.p', 'r'))
-	test_X = pickle.load(open('./test_data/test_data_box_counting_X.p', 'r'))
-	test_dims = pickle.load(open('./test_data/test_data_box_counting_dims.p', 'r'))
-	
-	epsilons  = np.logspace(-5,-1,10)
+    test_n_filled = pickle.load(open('./test_data/test_data_box_counting_n_filled.p', 'r'))
+    test_used_epsilons = pickle.load(open('./test_data/test_data_box_counting_used_epsilons.p', 'r'))
+    test_X = pickle.load(open('./test_data/test_data_box_counting_X.p', 'r'))
+    test_dims = pickle.load(open('./test_data/test_data_box_counting_dims.p', 'r'))
+    
+    epsilons  = np.logspace(-5,-1,10)
 
-	es, nfs, ues, dims = dimension_algorithms.box_counting_1D(test_X, epsilons)
+    es, nfs, ues, dims = dimension_algorithms.box_counting_1D(test_X, epsilons)
 
-	np.testing.assert_almost_equal(epsilons, es)
-	np.testing.assert_almost_equal(test_used_epsilons, ues)
-	test_relative_filled=[test_n_filled[i] * e for i,e in enumerate(epsilons)]
-	rfs=[nfs[i] * e for i,e in enumerate(epsilons)]
-	np.testing.assert_almost_equal(test_relative_filled, rfs)
-	np.testing.assert_almost_equal(test_dims, dims)
+    np.testing.assert_almost_equal(epsilons, es)
+    np.testing.assert_almost_equal(test_used_epsilons, ues)
+    test_relative_filled=[test_n_filled[i] * e for i,e in enumerate(epsilons)]
+    rfs=[nfs[i] * e for i,e in enumerate(epsilons)]
+    np.testing.assert_almost_equal(test_relative_filled, rfs)
+    np.testing.assert_almost_equal(test_dims, dims)
 
 def test_GPA():
-	test_n_found = pickle.load(open('./test_data/test_data_gpa_n_found.p', 'r'))
-	test_used_epsilons = pickle.load(open('./test_data/test_data_gpa_used_epsilons.p', 'r'))
-	test_X = pickle.load(open('./test_data/test_data_gpa_X.p', 'r'))
-	test_dims = pickle.load(open('./test_data/test_data_gpa_dims.p', 'r'))
-	
-	epsilons  = np.logspace(-5,-1,10)
+    test_n_found = pickle.load(open('./test_data/test_data_gpa_n_found.p', 'r'))
+    test_used_epsilons = pickle.load(open('./test_data/test_data_gpa_used_epsilons.p', 'r'))
+    test_X = pickle.load(open('./test_data/test_data_gpa_X.p', 'r'))
+    test_dims = pickle.load(open('./test_data/test_data_gpa_dims.p', 'r'))
+    
+    epsilons  = np.logspace(-5,-1,10)
 
-	es, nfs, ues, dims = dimension_algorithms.grassberger_procaccia_1D(test_X, 10**4,epsilons)
+    es, nfs, ues, dims = dimension_algorithms.grassberger_procaccia_1D(test_X, 10**4,epsilons)
 
-	np.testing.assert_almost_equal(epsilons, es)
-	np.testing.assert_almost_equal(test_used_epsilons, ues)
-	test_relative_found=[test_n_found[i] * e for i,e in enumerate(epsilons)]
-	rfs=[nfs[i] * e for i,e in enumerate(epsilons)]
-	np.testing.assert_almost_equal(test_relative_found, rfs)
-	np.testing.assert_almost_equal(test_dims, dims)
+    np.testing.assert_almost_equal(epsilons, es)
+    np.testing.assert_almost_equal(test_used_epsilons, ues)
+    test_relative_found=[test_n_found[i] * e for i,e in enumerate(epsilons)]
+    rfs=[nfs[i] * e for i,e in enumerate(epsilons)]
+    np.testing.assert_almost_equal(test_relative_found, rfs)
+    np.testing.assert_almost_equal(test_dims, dims)
 
