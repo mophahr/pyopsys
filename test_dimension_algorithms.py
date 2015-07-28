@@ -43,14 +43,14 @@ def test_box_counting():
     test_X = pickle.load(open('./test_data/test_data_box_counting_X.p', 'r'))
     test_dims = pickle.load(open('./test_data/test_data_box_counting_dims.p', 'r'))
     
-    epsilons  = np.logspace(-5,-1,10)
+    epsilons = np.logspace(-5,-1,10)
 
-    es, nfs, ues, dims = dimension_algorithms.box_counting_1D(test_X, epsilons)
+    es, nfs, ues, dims = dimension_algorithms.box_counting_1d(test_X, epsilons)
 
     np.testing.assert_almost_equal(epsilons, es)
     np.testing.assert_almost_equal(test_used_epsilons, ues)
-    test_relative_filled=[test_n_filled[i] * e for i,e in enumerate(epsilons)]
-    rfs=[nfs[i] * e for i,e in enumerate(epsilons)]
+    test_relative_filled = [test_n_filled[i] * e for i,e in enumerate(epsilons)]
+    rfs = [nfs[i] * e for i, e in enumerate(epsilons)]
     np.testing.assert_almost_equal(test_relative_filled, rfs)
     np.testing.assert_almost_equal(test_dims, dims)
 
@@ -60,21 +60,69 @@ def test_GPA():
     test_X = pickle.load(open('./test_data/test_data_gpa_X.p', 'r'))
     test_dims = pickle.load(open('./test_data/test_data_gpa_dims.p', 'r'))
     
-    epsilons  = np.logspace(-5,-1,10)
+    epsilons = np.logspace(-5,-1,10)
 
-    es, nfs, ues, dims = dimension_algorithms.grassberger_procaccia_1D(test_X, 10**4,epsilons)
+    es, nfs, ues, dims = dimension_algorithms.grassberger_procaccia_1d(test_X, 10**4,epsilons)
 
     np.testing.assert_almost_equal(epsilons, es)
     np.testing.assert_almost_equal(test_used_epsilons, ues)
-    test_relative_found=[test_n_found[i] * e for i,e in enumerate(epsilons)]
+    test_relative_found = [test_n_found[i] * e for i, e in enumerate(epsilons)]
     rfs=[nfs[i] * e for i,e in enumerate(epsilons)]
     np.testing.assert_almost_equal(test_relative_found, rfs)
     np.testing.assert_almost_equal(test_dims, dims)
 
 def test_other():
-    testmap = maps.TentMap(.62,3)
+    testmap = maps.TentMap(.62, 3)
     dimension_algorithms.tree_bottom_up_1d(lambda x: testmap.time_until_hole(x)[0])
     dimension_algorithms.tree_top_down_1d(lambda x: testmap.time_until_hole(x)[0])
     dimension_algorithms.output_function_evaluation_1d(lambda x: testmap.time_until_hole(x)[0])
     dimension_algorithms.uncertainty_method_1d(lambda x: testmap.time_until_hole(x)[0])
+
+
+def test_gaio():
+    asymmetry_parameter = .62
+    stretching_parameter = 3
+    dimension_algorithms.gaio_stable_manifold_1d(lambda x: [1 - 2 * (1 - asymmetry_parameter) * x / stretching_parameter, 2 * asymmetry_parameter * x / stretching_parameter])
+
+def test_io():
+    test_X = pickle.load(open('./test_data/test_data_box_counting_X.p', 'r'))
+    testmap = maps.TentMap(.62, 3)
+
+    e, n, ue, d, f = dimension_algorithms.box_counting_1d(test_X, save_comparison_data = True, data_dir = "/tmp/", data_string = "*T*E*S*T*")
+    saved_data = pickle.load(open(f, "r"))
+    np.testing.assert_equal(saved_data["data"],test_X)
+    np.testing.assert_equal(saved_data["epsilons"],e)
+    np.testing.assert_equal(saved_data["n"],n)
+    np.testing.assert_equal(saved_data["used_epsilons"],ue)
+    np.testing.assert_equal(saved_data["dimensions"],d)
+
+    e, n, ue, d, f = dimension_algorithms.grassberger_procaccia_1d(test_X, 10**4, save_comparison_data = True, data_dir = "/tmp/", data_string = "*T*E*S*T*")
+    saved_data = pickle.load(open(f, "r"))
+    np.testing.assert_equal(saved_data["data"],test_X)
+    np.testing.assert_equal(saved_data["epsilons"],e)
+    np.testing.assert_equal(saved_data["n"],n)
+    np.testing.assert_equal(saved_data["used_epsilons"],ue)
+    np.testing.assert_equal(saved_data["dimensions"],d)
+
+    e, n, ue, d, f = dimension_algorithms.tree_bottom_up_1d(lambda x: testmap.time_until_hole(x)[0], save_comparison_data = True, data_dir = "/tmp/", data_string = "*T*E*S*T*")
+    saved_data = pickle.load(open(f, "r"))
+    np.testing.assert_equal(saved_data["epsilons"],e)
+    np.testing.assert_equal(saved_data["n"],n)
+    np.testing.assert_equal(saved_data["used_epsilons"],ue)
+    np.testing.assert_equal(saved_data["dimensions"],d)
+
+    e, n, ue, d, f = dimension_algorithms.tree_top_down_1d(lambda x: testmap.time_until_hole(x)[0], save_comparison_data = True, data_dir = "/tmp/", data_string = "*T*E*S*T*")
+    saved_data = pickle.load(open(f, "r"))
+    np.testing.assert_equal(saved_data["epsilons"],e)
+    np.testing.assert_equal(saved_data["n"],n)
+    np.testing.assert_equal(saved_data["used_epsilons"],ue)
+    np.testing.assert_equal(saved_data["dimensions"],d)
+
+    e, n, ue, d, f = dimension_algorithms.uncertainty_method_1d(lambda x: testmap.time_until_hole(x)[0], save_comparison_data = True, data_dir = "/tmp/", data_string = "*T*E*S*T*")
+    saved_data = pickle.load(open(f, "r"))
+    np.testing.assert_equal(saved_data["epsilons"],e)
+    np.testing.assert_equal(saved_data["n"],n)
+    np.testing.assert_equal(saved_data["used_epsilons"],ue)
+    np.testing.assert_equal(saved_data["dimensions"],d)
+
 

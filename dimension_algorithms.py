@@ -22,6 +22,8 @@ from __future__ import division, print_function
 """
 import numpy as np
 from math import log
+import uuid
+import pickle
 
 # ============================================================================
 # helper functions
@@ -55,9 +57,9 @@ def raster(points, epsilon, dim=1, norm=[1]):
 # algorithms acting upon existing sets:
 # ============================================================================
 
-def box_counting_1D(points, epsilons = np.logspace(-5,-1,10), norm = 1.):
+def box_counting_1d(points, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
     """
-    points:        list of 1d coordinates making up the set under consideration
+    points:      list of 1d coordinates making up the set under consideration
     epsilons:    list of box-sizes to consider (default: np.logspace(-5,-1,10))
     norm:        normalisation constant for coordinates (default : 1)
 
@@ -92,9 +94,29 @@ def box_counting_1D(points, epsilons = np.logspace(-5,-1,10), norm = 1.):
             used_epsilons += [e]
             dimensions += [-(log(n_filled[e_idx])- log(n_filled[e_idx+1])) / (log(e) - log(epsilons[e_idx + 1]))]
     
-    return epsilons, n_filled, used_epsilons, dimensions
+    if save_comparison_data:
+        identifier = uuid.uuid1().hex
+        n_samples = len(points)
 
-def box_counting_1D_raster(boxes, epsilons = np.logspace(-5,-1,10), norm = 1.):
+        file_name = "box_counting_1d---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
+
+        stuff = {"data"          : points,
+                 "epsilons"      : epsilons,
+                 "data_string"   : data_string,
+                 "norm"          : norm,
+                 "uuid"          : identifier,
+                 "n_samples"     : n_samples,
+                 "n"             : n_filled,
+                 "used_epsilons" : used_epsilons,
+                 "dimensions"    : dimensions}
+                        
+        pickle.dump(stuff, open(data_dir+file_name, "w"))
+
+        return epsilons, n_filled, used_epsilons, dimensions, data_dir+file_name
+    else:
+        return epsilons, n_filled, used_epsilons, dimensions
+
+def box_counting_1d_raster(boxes, n_samples=None, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
     """
     boxes:       list indicating which box of size norm / len(boxes) is full (1) or empty (0)
     epsilons:    list of box-sizes to consider (default: np.logspace(-5,-1,10))
@@ -151,10 +173,30 @@ def box_counting_1D_raster(boxes, epsilons = np.logspace(-5,-1,10), norm = 1.):
         if n_filled[e_idx] > 0 and n_filled[e_idx+1] > 0:
             used_epsilons += [e]
             dimensions += [-(log(n_filled[e_idx])- log(n_filled[e_idx+1])) / (log(e) - log(epsilons[e_idx + start_index + 1]))]
-    
-    return epsilons[start_index:], n_filled, used_epsilons, dimensions
 
-def grassberger_procaccia_1D(points, n_samples, epsilons = np.logspace(-5,-1,10), norm = 1.):
+    if save_comparison_data:
+        identifier = uuid.uuid1().hex
+
+        file_name = "box_counting_1d_raster---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
+        data_file_name = identifier+".npy"
+
+        stuff = {"data"         : boxes,
+                 "epsilons"     : epsilons[start_index:],
+                 "data_string"  : data_string,
+                 "norm"         : norm,
+                 "uuid"         : identifier,
+                 "n_samples"    : n_samples,
+                 "n"            : n_filled,
+                 "used_epsilons": used_epsilons,
+                 "dimensions"   : dimensions}
+                        
+        pickle.dump(stuff, open(data_dir+file_name, "w"))
+
+        return epsilons[start_index:], n_filled, used_epsilons, dimensions, data_dir+file_name
+    else:
+        return epsilons[start_index:], n_filled, used_epsilons, dimensions
+
+def grassberger_procaccia_1d(points, n_samples, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
     """
     points:      list of 1d coordinates making up the set under consideration
     epsilons:    list of box-sizes to consider (default: np.logspace(-5,-1,10))
@@ -185,160 +227,324 @@ def grassberger_procaccia_1D(points, n_samples, epsilons = np.logspace(-5,-1,10)
             used_epsilons += [e]
             dimensions += [(log(n_found[e_idx]) - log(n_found[e_idx + 1])) / (log(e) - log(epsilons[e_idx + 1]))]
     
-    return epsilons, n_found, used_epsilons, dimensions
+    if save_comparison_data:
+        identifier = uuid.uuid1().hex
+
+        file_name = "grassberger_procaccia_1d---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
+
+        stuff = {"data"         : points,
+                 "epsilons"     : epsilons,
+                 "data_string"  : data_string,
+                 "norm"         : norm,
+                 "uuid"         : identifier,
+                 "n_samples"    : n_samples,
+                 "n"            : n_found,
+                 "used_epsilons": used_epsilons,
+                 "dimensions"   : dimensions}
+                        
+        pickle.dump(stuff, open(data_dir+file_name, "w"))
+
+        return epsilons, n_found, used_epsilons, dimensions, data_dir+file_name
+    else:
+        return epsilons, n_found, used_epsilons, dimensions
 
 # ============================================================================
 # algorithms for creating the set:
 # ============================================================================
 
-def output_function_evaluation_1d(output_function):
+def output_function_evaluation_1d(output_function, min_step = pow(10,-5), alpha = 3, t = 100, max_step_factor =2, delta = .000005):
     """
     implementation of the method from 
     http://journals.aps.org/prl/abstract/10.1103/PhysRevLett.86.2778
 
     for a detailed desription of the parameters please heck out said paper.
     """
+    max_step = max_step_factor * min_step
+    x = min_step
+    step = x
+    X = [0,x]
+    data = [output_function(x) for x in X]
+    i = 1
 
-    pass
+    #array to track which step [min, adaptive, max] was used: to check if 
+    #parameter choice was ok
+    used = [0,0,0]
+    
+    temps = []
+    steps = []
+    slopes = []
+    
+    while x < 1:
+        slope = (data[i] - data[i - 1]) / step
+        slopes += [slope]
+        if slope == 0:
+            step = max_step
+            used[2] += 1
+        else:
+            temp = min([delta / abs(slope), alpha * step])
+            temps += [delta / abs(slope)]
+            if temp < min_step:
+                step = min_step
+                used[0] += 1
+            elif temp > max_step:
+                step = max_step
+                used[2] += 1
+            else:
+                step = temp
+                used[1] += 1
+        x=min([x + step,1])
+        X += [x]
+        data += [output_function(x)]
+        i += 1
+        steps+=[step]
 
+def gaio_stable_manifold_1d(pre_image, max_n_checked = pow(10, 5), required_resolution = pow(10,-5)):
+    n_checked = 0
+
+    l_max = -int(log(required_resolution, 2)) - 1
+    levels = [l for l in xrange(5, l_max+1)]
+    
+    check_per_box = 100
+
+    #set all as overlapping, so that alg. doesn't termonate right away
+    overlapping_last_level = np.ones(pow(2, levels[0] - 1))
+
+    for l in levels:
+        box_size = pow(2., -l)
+        overlapping = np.zeros(pow(2, l))
+        for box_index in xrange(pow(2, l)):
+            if overlapping_last_level[int(box_index /2)] == 1:
+                for i in xrange(check_per_box):
+                    pi = pre_image(box_index * box_size + np.random.random() * box_size)
+                    n_checked += 1
+                    if int(pi[0] / box_size) == box_index or int(pi[1] / box_size) == box_index:
+                        #this box contains its preimage.
+                        overlapping[box_index] = 1
+                        break
+        overlapping_last_level = overlapping[:]
+    
+    #getting stable manifold:
+    n_ic = 10
+    pts = np.array([])
+    
+    stable = overlapping[:]
+    
+    for idx, fixed in enumerate(overlapping):
+        if fixed == 1:
+            pts = np.append(pts, idx * box_size + np.random.random(n_ic) * box_size)
+
+    new_pts = pts
+
+    old_n_found = sum(stable)
+    
+    while n_checked <= max_n_checked:
+        new_pts = [pre_img for pt in pts for pre_img in pre_image(pt)]
+        n_checked += len(new_pts)
+        new_pts = [pt for pt in new_pts if 0 <= pt < 1]
+        pts=np.append(pts, new_pts)
+        for pt in new_pts:
+            stable[int(pt / box_size)] = 1
+        n_found = sum(stable)
+        if n_found == old_n_found:
+            break
+            
 # ============================================================================
 # on the fly algorithms:
 # ============================================================================
 
-def uncertainty_method_1d(indicator,n_required=10, n_max=100, epsilons = np.logspace(-5,-1,10), norm = 1.):
+def uncertainty_method_1d(indicator,n_required=10, n_max=100, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
     """
     calculates the scaling of the ratio of points in an epsilon environment of
     a point that lead to opposite results (one stays in the system, the otheri
     leaves)
     """
-    n_computed=0
-    uncertainty=[]
+    n_computed = 0
+    uncertainty = []
     for e in epsilons:
-        n_uncertain=0
-        n_tried=0
-        while n_uncertain < n_required and n_tried<n_max:
-            n_tried+=2
-            x=np.random.random()
-            event_1=indicator(x)
-            event_2=indicator((x+e)%1)
-            n_computed+=2
+        n_uncertain = 0
+        n_tried = 0
+        while n_uncertain < n_required and n_tried < n_max:
+            n_tried += 2
+            x = np.random.random()
+            event_1 = indicator(x)
+            event_2 = indicator((x + e) % 1)
+            n_computed += 2
             if not (event_1 == event_2 ):
                 n_uncertain += 1
-        uncertainty+=[n_uncertain/n_tried]
-    dimensions=[]
-    used_epsilons=[]
-    for e_idx,e in enumerate(epsilons[:-1]):
-        if uncertainty[e_idx]>0 and uncertainty[e_idx+1]>0:
-            used_epsilons+=[e]     
-            dimensions+=[1-(log(uncertainty[e_idx])-log(uncertainty[e_idx+1]))/(log(e)-log(epsilons[e_idx+1]))]
+        uncertainty += [n_uncertain / n_tried]
+    dimensions = []
+    used_epsilons = []
+    for e_idx, e in enumerate(epsilons[:-1]):
+        if uncertainty[e_idx] > 0 and uncertainty[e_idx + 1] > 0:
+            used_epsilons += [e]     
+            dimensions += [1 - (log(uncertainty[e_idx]) - log(uncertainty[e_idx + 1])) / (log(e) - log(epsilons[e_idx + 1]))]
 
-    return epsilons, uncertainty, used_epsilons, dimensions
+    if save_comparison_data:
+        identifier = uuid.uuid1().hex
 
-def tree_bottom_up_1d(time_function, n_samples=1000, t=10, epsilons = np.logspace(-5,-1,10), norm = 1.):
+        file_name = "uncertainty_method_1d---"+"data_string"+"---n_computed__{}".format(n_computed)+"---"+identifier+".p"
+
+        stuff = {"epsilons"     : list(epsilons),
+                 "data_string"  : data_string,
+                 "norm"         : norm,
+                 "uuid"         : identifier,
+                 "n_samples"    : n_computed,
+                 "n"            : uncertainty,
+                 "used_epsilons": used_epsilons,
+                 "dimensions"   : dimensions,
+                 "n_required"   : n_required,
+                 "n_max"        : n_max}
+                        
+        pickle.dump(stuff, open(data_dir+file_name, "w"))
+
+        return epsilons, uncertainty, used_epsilons, dimensions, data_dir+file_name
+    else:
+        return epsilons, uncertainty, used_epsilons, dimensions
+
+def tree_bottom_up_1d(time_function, n_samples = 1000, t = 10, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
     """
     Sample at most a given number of points in each box at the smallest epsilon:
     """
-    n_tested=0
-    max_points=int(epsilons[0]*n_samples)+1
+    n_tested = 0
+    max_points = int(epsilons[0] * n_samples) + 1
 
-    n_filled=np.zeros(len(epsilons))
+    n_filled = np.zeros(len(epsilons))
 
-    for e_idx,e in enumerate(epsilons):
+    for e_idx, e in enumerate(epsilons):
         if e_idx == 0:
-            boxes=np.zeros(int(1/e)+1)
+            boxes = np.zeros(int(1 / e) + 1)
             for box_index in xrange(len(boxes)):
                 for i in xrange(max_points):
-                    x=box_index*e+e*np.random.random()
-                    n_tested+=1
-                    time=time_function(x)
-                    if time >=t:
-                        boxes[box_index]=1
+                    x = box_index * e + e * np.random.random()
+                    n_tested += 1
+                    time = time_function(x)
+                    if time >= t:
+                        boxes[box_index] = 1
                         break
-            n_filled[e_idx]=sum(boxes)
+            n_filled[e_idx] = sum(boxes)
         else:
-            larger_boxes=np.zeros(int(1/e)+1)
+            larger_boxes = np.zeros(int( 1 / e ) + 1)
             for box_index in xrange(len(larger_boxes)):
-                lower_idx = int(box_index*e/epsilons[e_idx-1])
-                upper_idx = int((box_index+1)*e/epsilons[e_idx-1])
-                if sum(boxes[lower_idx:upper_idx+2])>0:
-                    larger_boxes[box_index]=1
-            n_filled[e_idx]=sum(larger_boxes)
-            boxes=larger_boxes
-    dimensions=[]
-    used_epsilons=[]
-    for e_idx,e in enumerate(epsilons[:-1]):
-        if n_filled[e_idx]>0 and n_filled[e_idx+1]>0:
-            used_epsilons+=[e]
-            dimensions+=[-(log(n_filled[e_idx])-log(n_filled[e_idx+1]))/(log(e)-log(epsilons[e_idx+1]))]
+                lower_idx = int(box_index       * e / epsilons[e_idx-1])
+                upper_idx = int((box_index + 1) * e / epsilons[e_idx-1])
+                if sum(boxes[lower_idx:upper_idx + 2]) > 0:
+                    larger_boxes[box_index] = 1
+            n_filled[e_idx] = sum(larger_boxes)
+            boxes = larger_boxes
     
-    return epsilons, n_filled, used_epsilons, dimensions
+    dimensions = []
+    used_epsilons = []
+    for e_idx, e in enumerate(epsilons[:-1]):
+        if n_filled[e_idx] > 0 and n_filled[e_idx+1] > 0:
+            used_epsilons += [e]
+            dimensions+=[-(log(n_filled[e_idx]) - log(n_filled[e_idx + 1])) / (log(e) - log(epsilons[e_idx + 1]))]
+
+    if save_comparison_data:
+        identifier = uuid.uuid1().hex
+
+        file_name = "tree_bottom_up_1d---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
+
+        stuff = {"epsilons"     : epsilons,
+                 "data_string"  : data_string,
+                 "t"            : t,
+                 "norm"         : norm,
+                 "uuid"         : identifier,
+                 "n_samples"    : n_samples,
+                 "n"            : n_filled,
+                 "used_epsilons": used_epsilons,
+                 "dimensions"   : dimensions}
+                        
+        pickle.dump(stuff, open(data_dir+file_name, "w"))
+
+        return epsilons, n_filled, used_epsilons, dimensions, data_dir+file_name
+    else:
+        return epsilons, n_filled, used_epsilons, dimensions
 
 
-def tree_top_down_1d(time_function, n_samples=1000, t=10, epsilons = np.logspace(-5,-1,10), norm = 1.):
-    n_tested=0
-    n_filled=np.zeros(len(epsilons))
+def tree_top_down_1d(time_function, n_samples = 1000, t = 10, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
+    """
+    Sample at most a given number of points in each box at the largest epsilon and refine only filled boxes:
+    """
+
+    n_tested = 0
+    n_filled = np.zeros(len(epsilons))
     
+    found_points = []
 
-    
-    found_points=[]
-
-    for e_idx,e in enumerate(reversed(epsilons)):
-        checked_intervals=[]
-        tested_this_epsilon=0
-        max_points=int(e*n_samples)
+    for e_idx, e in enumerate(reversed(epsilons)):
+        checked_intervals = []
+        tested_this_epsilon = 0
+        max_points = int(e * n_samples)
         if e_idx == 0:
-            boxes=np.zeros(int(1/e)+1)
+            boxes = np.zeros(int(1 / e) + 1)
             for box_index in xrange(len(boxes)):
-                lower_bound = box_index*e
-                upper_bound = lower_bound+e
-                checked_intervals+=[lower_bound,upper_bound]
+                lower_bound = box_index * e
+                upper_bound = lower_bound + e
+                checked_intervals += [lower_bound,upper_bound]
                 
-                delta=min([e,1.-lower_bound])
+                delta=min([e, 1. - lower_bound])
                 
                 for i in xrange(max_points):
-                    x=lower_bound+delta*np.random.random()
-                    if not(0.<=x<1):
-                        n_tested+=1
-                        tested_this_epsilon+=1
-                        time=time_function(x)
-                        if time >=t:
-                            boxes[box_index]=1
-                            found_points+=[x]
+                    x=lower_bound + delta * np.random.random()
+                    if not(0 <= x < 1):
+                        n_tested += 1
+                        tested_this_epsilon += 1
+                        time = time_function(x)
+                        if time >= t:
+                            boxes[box_index] = 1
+                            found_points += [x]
                             break
         else:
-            found_points=list(np.sort(found_points))
-            smaller_boxes=np.zeros(int(1/e)+1)
+            found_points = list(np.sort(found_points))
+            smaller_boxes = np.zeros(int(1 / e) + 1)
             for box_index in range(len(smaller_boxes)):
-                lower_bound = box_index*e
-                upper_bound = lower_bound+e
-                lower_idx = int(box_index*e/epsilons[::-1][e_idx-1])
-                upper_idx = min([int((box_index+1)*e/epsilons[::-1][e_idx-1]),len(boxes)-1])
-                if boxes[lower_idx]>0 or boxes[upper_idx]>0:
-                    checked_intervals+=[lower_bound,upper_bound]
-                    if len([x for x in found_points if lower_bound<=x<upper_bound])>0:
-                        smaller_boxes[box_index]=1
+                lower_bound = box_index * e
+                upper_bound = lower_bound + e
+                lower_idx = int(box_index * e / epsilons[::-1][e_idx - 1])
+                upper_idx = min([int((box_index + 1) * e / epsilons[::-1][e_idx - 1]), len(boxes) - 1])
+                if boxes[lower_idx] > 0 or boxes[upper_idx] > 0:
+                    checked_intervals += [lower_bound, upper_bound]
+                    if len([x for x in found_points if lower_bound <= x < upper_bound]) > 0:
+                        smaller_boxes[box_index] = 1
                     else:
                         for i in xrange(max_points):
-                            x=lower_bound+e*np.random.random()
-                            n_tested+=1
-                            tested_this_epsilon+=1
-                            time=time_function(x)
-                            if time >=t:
-                                smaller_boxes[box_index]=1
-                                found_points+=[x]
-                                smaller_boxes[box_index]=1
+                            x = lower_bound + e * np.random.random()
+                            n_tested += 1
+                            tested_this_epsilon += 1
+                            time = time_function(x)
+                            if time >= t:
+                                smaller_boxes[box_index] = 1
+                                found_points += [x]
+                                smaller_boxes[box_index] = 1
                                 break
-            boxes=smaller_boxes
+            boxes = smaller_boxes
               
-        n_filled[e_idx]=sum(boxes)
-    dimensions=[]
-    used_epsilons=[]
-    for e_idx,e in enumerate(epsilons[:-1]):
-        if n_filled[e_idx]>0 and n_filled[e_idx+1]>0:
-            used_epsilons+=[e]
-            dimensions+=[(log(n_filled[e_idx])-log(n_filled[e_idx+1]))/(log(e)-log(epsilons[e_idx+1]))]
+        n_filled[e_idx] = sum(boxes)
+    dimensions = []
+    used_epsilons = []
+    for e_idx, e in enumerate(epsilons[:-1]):
+        if n_filled[e_idx] > 0 and n_filled[e_idx + 1] > 0:
+            used_epsilons += [e]
+            dimensions+=[(log(n_filled[e_idx]) - log(n_filled[e_idx + 1])) / (log(e) - log(epsilons[e_idx + 1]))]
 
-    return epsilons, n_filled, used_epsilons, dimensions
+    if save_comparison_data:
+        identifier = uuid.uuid1().hex
 
+        file_name = "tree_top_down_1d---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
 
+        stuff = {"epsilons"     : epsilons,
+                 "data_string"  : data_string,
+                 "t"            : t,
+                 "norm"         : norm,
+                 "uuid"         : identifier,
+                 "n_samples"    : n_samples,
+                 "n"            : n_filled,
+                 "used_epsilons": used_epsilons,
+                 "dimensions"   : dimensions}
+                        
+        pickle.dump(stuff, open(data_dir+file_name, "w"))
+
+        return epsilons, n_filled, used_epsilons, dimensions, data_dir+file_name
+    else:
+        return epsilons, n_filled, used_epsilons, dimensions
 
