@@ -78,7 +78,6 @@ def test_other():
     dimension_algorithms.output_function_evaluation_1d(lambda x: testmap.time_until_hole(x)[0])
     dimension_algorithms.uncertainty_method_1d(lambda x: testmap.time_until_hole(x)[0])
 
-
 def test_gaio():
     asymmetry_parameter = .62
     stretching_parameter = 3
