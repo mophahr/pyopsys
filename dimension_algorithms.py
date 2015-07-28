@@ -1,0 +1,344 @@
+# -*- coding: utf-8 -*-
+from __future__ import division, print_function
+"""
+    dimension_algorithms module
+
+    Copyright © 2012-2015 Moritz Schönwetter
+
+    This file is part of pyopsys.
+
+    pyopsys is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    pyopsys is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with pyopsys.  If not, see <http://www.gnu.org/licenses/>.
+"""
+import numpy as np
+from math import log
+
+# ============================================================================
+# helper functions
+# ============================================================================
+def raster(points, epsilon, dim=1, norm=[1]):
+    """
+    returns a "dim"-dimensional array of zeros (empty) and ones (full) 
+    indicating which boxes contain at least one element of "points".
+    """
+    if dim == 1:
+        filled_boxes_size = int(norm[0] / epsilon)
+        if filled_boxes_size * epsilon < norm[0]:
+            filled_boxes_size += 1
+        filled_boxes = np.zeros(filled_boxes_size)
+        for point in points:
+            index = int(point / (norm[0] * epsilon))
+            filled_boxes[index] = 1
+    else:
+        filled_boxes_size = [int(norm[i] / epsilon[i]) for i in range(dim)]
+        for i in range(dim):
+            if filled_boxes_size[i] * epsilon[i] < norm[i]:
+                filled_boxes_size[i] += 1
+        filled_boxes = np.zeros(filled_boxes_size)
+
+        for point in points:
+            index = [int(point[i] / (norm[i] * epsilon[i])) for i in range(dim)]
+            filled_boxes[index] = 1
+    return epsilon, filled_boxes
+
+# ============================================================================
+# algorithms acting upon existing sets:
+# ============================================================================
+
+def box_counting_1D(points, epsilons = np.logspace(-5,-1,10), norm = 1.):
+    """
+    points:        list of 1d coordinates making up the set under consideration
+    epsilons:    list of box-sizes to consider (default: np.logspace(-5,-1,10))
+    norm:        normalisation constant for coordinates (default : 1)
+
+    most basic version of box-counting.
+    It calculates the number of "epsilons"-sized boxes intesecting a set
+    of points.
+    
+    returns epsilons, n_filled, used_epsilons, dimensions
+    """
+
+    n_filled=[] 
+    
+    #box-counting:
+    for e_idx, e in enumerate(epsilons):
+        n_boxes = int(1 / e)
+        if n_boxes * e < norm:
+            n_boxes += 1
+        new_filled_boxes = np.zeros(n_boxes)
+        
+        for x_idx, x in enumerate(points):
+            # mark boxes that contain points 
+            box_counting_index = int(x / e)
+            new_filled_boxes[box_counting_index] = 1
+        
+        n_filled += [sum(new_filled_boxes)]
+        filled_boxes = new_filled_boxes[:]
+    
+    dimensions=[]
+    used_epsilons=[]
+    for e_idx,e in enumerate(epsilons[:-1]):
+        if n_filled[e_idx] > 0 and n_filled[e_idx+1] > 0:
+            used_epsilons += [e]
+            dimensions += [-(log(n_filled[e_idx])- log(n_filled[e_idx+1])) / (log(e) - log(epsilons[e_idx + 1]))]
+    
+    return epsilons, n_filled, used_epsilons, dimensions
+
+def box_counting_1D_raster(boxes, epsilons = np.logspace(-5,-1,10), norm = 1.):
+    """
+    boxes:       list indicating which box of size norm / len(boxes) is full (1) or empty (0)
+    epsilons:    list of box-sizes to consider (default: np.logspace(-5,-1,10))
+    norm:        normalisation constant for coordinates (default : 1)
+
+    version of box-counting for when the set is given as a list of boxes.
+    
+    returns epsilons, n_filled, used_epsilons, dimensions
+    """
+    input_box_size = norm / len(boxes)
+    
+    #find smallest useful epsilon and check which boxes are filled:
+    for e_idx, e in enumerate(epsilons):
+        if e >= input_box_size:
+            n_boxes = int(1 / e)
+            if n_boxes * e < norm:
+                n_boxes += 1
+            filled_boxes = np.zeros(n_boxes)
+            start_index = e_idx
+            for filled_idx, filled in enumerate(boxes):
+                if filled > 0:
+                    # mark larger boxes that contain either of the ends of the box 
+                    box_counting_index = int(filled_idx * input_box_size / e)
+                    filled_boxes[box_counting_index] = 1
+                    if not filled_idx == len(boxes)-1:
+                        box_counting_index = int((filled_idx + .99) * input_box_size / e)
+                        filled_boxes[box_counting_index] = 1
+            break
+    
+    n_filled=[sum(filled_boxes)] 
+    
+    #box-counting:
+    for e_idx, e in enumerate(epsilons[start_index+1:]):
+        n_boxes = int(1 / e)
+        if n_boxes * e < norm:
+            n_boxes += 1
+        new_filled_boxes = np.zeros(n_boxes)
+        
+        for filled_idx, filled in enumerate(filled_boxes):
+            if filled > 0:
+                # mark larger boxes that contain either of the ends of the box 
+                box_counting_index = int(filled_idx * epsilons[e_idx+start_index] / e)
+                new_filled_boxes[box_counting_index] = 1
+                if not filled_idx == len(filled_boxes)-1:
+                    box_counting_index = int((filled_idx + .99) * epsilons[e_idx+start_index] / e)
+                    new_filled_boxes[box_counting_index] = 1
+        
+        n_filled += [sum(new_filled_boxes)]
+        filled_boxes = new_filled_boxes[:]
+    
+    dimensions=[]
+    used_epsilons=[]
+    for e_idx,e in enumerate(epsilons[start_index:-1]):
+        if n_filled[e_idx] > 0 and n_filled[e_idx+1] > 0:
+            used_epsilons += [e]
+            dimensions += [-(log(n_filled[e_idx])- log(n_filled[e_idx+1])) / (log(e) - log(epsilons[e_idx + start_index + 1]))]
+    
+    return epsilons[start_index:], n_filled, used_epsilons, dimensions
+
+def grassberger_procaccia_1D(points, n_samples, epsilons = np.logspace(-5,-1,10), norm = 1.):
+    """
+    points:      list of 1d coordinates making up the set under consideration
+    epsilons:    list of box-sizes to consider (default: np.logspace(-5,-1,10))
+    norm:        normalisation constant for coordinates (default : 1)
+    
+    grassberger procaccia algorithm to calculate the correlation dimension.
+    
+    returns epsilons, n_filled, used_epsilons, dimensions
+    """
+    
+    n_found = []
+    n_points = len(points)
+    for e in epsilons:
+        close_points = 0
+        set_size = 0
+        for x_idx,x in enumerate(points):
+            for j in xrange(1, n_points - x_idx):
+                if abs(x - points[x_idx + j]) <= e:
+                    close_points += 1
+                else:
+                    break
+        n_found += [(close_points * 2 / (n_points * (n_points - 1)))]
+    
+    dimensions = []
+    used_epsilons = []
+    for e_idx, e in enumerate(epsilons[:-1]):
+        if n_found[e_idx] > 0 and n_found[e_idx+1] > 0:
+            used_epsilons += [e]
+            dimensions += [(log(n_found[e_idx]) - log(n_found[e_idx + 1])) / (log(e) - log(epsilons[e_idx + 1]))]
+    
+    return epsilons, n_found, used_epsilons, dimensions
+
+# ============================================================================
+# algorithms for creating the set:
+# ============================================================================
+
+def output_function_evaluation_1d(output_function):
+    """
+    implementation of the method from 
+    http://journals.aps.org/prl/abstract/10.1103/PhysRevLett.86.2778
+
+    for a detailed desription of the parameters please heck out said paper.
+    """
+
+    pass
+
+# ============================================================================
+# on the fly algorithms:
+# ============================================================================
+
+def uncertainty_method_1d(indicator,n_required=10, n_max=100, epsilons = np.logspace(-5,-1,10), norm = 1.):
+    """
+    calculates the scaling of the ratio of points in an epsilon environment of
+    a point that lead to opposite results (one stays in the system, the otheri
+    leaves)
+    """
+    n_computed=0
+    uncertainty=[]
+    for e in epsilons:
+        n_uncertain=0
+        n_tried=0
+        while n_uncertain < n_required and n_tried<n_max:
+            n_tried+=2
+            x=np.random.random()
+            event_1=indicator(x)
+            event_2=indicator((x+e)%1)
+            n_computed+=2
+            if not (event_1 == event_2 ):
+                n_uncertain += 1
+        uncertainty+=[n_uncertain/n_tried]
+    dimensions=[]
+    used_epsilons=[]
+    for e_idx,e in enumerate(epsilons[:-1]):
+        if uncertainty[e_idx]>0 and uncertainty[e_idx+1]>0:
+            used_epsilons+=[e]     
+            dimensions+=[1-(log(uncertainty[e_idx])-log(uncertainty[e_idx+1]))/(log(e)-log(epsilons[e_idx+1]))]
+
+    return epsilons, uncertainty, used_epsilons, dimensions
+
+def tree_bottom_up_1d(time_function, n_samples=1000, t=10, epsilons = np.logspace(-5,-1,10), norm = 1.):
+    """
+    Sample at most a given number of points in each box at the smallest epsilon:
+    """
+    n_tested=0
+    max_points=int(epsilons[0]*n_samples)+1
+
+    n_filled=np.zeros(len(epsilons))
+
+    for e_idx,e in enumerate(epsilons):
+        if e_idx == 0:
+            boxes=np.zeros(int(1/e)+1)
+            for box_index in xrange(len(boxes)):
+                for i in xrange(max_points):
+                    x=box_index*e+e*np.random.random()
+                    n_tested+=1
+                    time=time_function(x)
+                    if time >=t:
+                        boxes[box_index]=1
+                        break
+            n_filled[e_idx]=sum(boxes)
+        else:
+            larger_boxes=np.zeros(int(1/e)+1)
+            for box_index in xrange(len(larger_boxes)):
+                lower_idx = int(box_index*e/epsilons[e_idx-1])
+                upper_idx = int((box_index+1)*e/epsilons[e_idx-1])
+                if sum(boxes[lower_idx:upper_idx+2])>0:
+                    larger_boxes[box_index]=1
+            n_filled[e_idx]=sum(larger_boxes)
+            boxes=larger_boxes
+    dimensions=[]
+    used_epsilons=[]
+    for e_idx,e in enumerate(epsilons[:-1]):
+        if n_filled[e_idx]>0 and n_filled[e_idx+1]>0:
+            used_epsilons+=[e]
+            dimensions+=[-(log(n_filled[e_idx])-log(n_filled[e_idx+1]))/(log(e)-log(epsilons[e_idx+1]))]
+    
+    return epsilons, n_filled, used_epsilons, dimensions
+
+
+def tree_top_down_1d(time_function, n_samples=1000, t=10, epsilons = np.logspace(-5,-1,10), norm = 1.):
+    n_tested=0
+    n_filled=np.zeros(len(epsilons))
+    
+
+    
+    found_points=[]
+
+    for e_idx,e in enumerate(reversed(epsilons)):
+        checked_intervals=[]
+        tested_this_epsilon=0
+        max_points=int(e*n_samples)
+        if e_idx == 0:
+            boxes=np.zeros(int(1/e)+1)
+            for box_index in xrange(len(boxes)):
+                lower_bound = box_index*e
+                upper_bound = lower_bound+e
+                checked_intervals+=[lower_bound,upper_bound]
+                
+                delta=min([e,1.-lower_bound])
+                
+                for i in xrange(max_points):
+                    x=lower_bound+delta*np.random.random()
+                    if not(0.<=x<1):
+                        n_tested+=1
+                        tested_this_epsilon+=1
+                        time=time_function(x)
+                        if time >=t:
+                            boxes[box_index]=1
+                            found_points+=[x]
+                            break
+        else:
+            found_points=list(np.sort(found_points))
+            smaller_boxes=np.zeros(int(1/e)+1)
+            for box_index in range(len(smaller_boxes)):
+                lower_bound = box_index*e
+                upper_bound = lower_bound+e
+                lower_idx = int(box_index*e/epsilons[::-1][e_idx-1])
+                upper_idx = min([int((box_index+1)*e/epsilons[::-1][e_idx-1]),len(boxes)-1])
+                if boxes[lower_idx]>0 or boxes[upper_idx]>0:
+                    checked_intervals+=[lower_bound,upper_bound]
+                    if len([x for x in found_points if lower_bound<=x<upper_bound])>0:
+                        smaller_boxes[box_index]=1
+                    else:
+                        for i in xrange(max_points):
+                            x=lower_bound+e*np.random.random()
+                            n_tested+=1
+                            tested_this_epsilon+=1
+                            time=time_function(x)
+                            if time >=t:
+                                smaller_boxes[box_index]=1
+                                found_points+=[x]
+                                smaller_boxes[box_index]=1
+                                break
+            boxes=smaller_boxes
+              
+        n_filled[e_idx]=sum(boxes)
+    dimensions=[]
+    used_epsilons=[]
+    for e_idx,e in enumerate(epsilons[:-1]):
+        if n_filled[e_idx]>0 and n_filled[e_idx+1]>0:
+            used_epsilons+=[e]
+            dimensions+=[(log(n_filled[e_idx])-log(n_filled[e_idx+1]))/(log(e)-log(epsilons[e_idx+1]))]
+
+    return epsilons, n_filled, used_epsilons, dimensions
+
+
+
