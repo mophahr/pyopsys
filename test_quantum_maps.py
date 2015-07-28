@@ -52,6 +52,12 @@ def test_saving_and_loading():
 def test_moduli_sorting():
 	''' make sure things get sorted from largest to smallest |\nu|'''
 	test_bakermap = quantum_maps.ternary_baker( 27,.1)
+	test_bakermap.eigenvalues()
+	test_bakermap.eigenvalues_sorted_by_modulus()
+	assert_true(test_bakermap.sorted_moduli[0]>=test_bakermap.sorted_moduli[0])
+
+def test_husimi():
+	test_bakermap = quantum_maps.ternary_baker( 27,.1)
 	to_be_husimid = test_bakermap.eigensystem()[1][:10]
 	print(test_bakermap.husimi_distribution(to_be_husimid))
 	
