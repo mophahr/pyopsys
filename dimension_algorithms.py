@@ -67,7 +67,8 @@ def box_counting_1d(points, epsilons = np.logspace(-5,-1,10), norm = 1., save_co
     It calculates the number of "epsilons"-sized boxes intesecting a set
     of points.
     
-    returns epsilons, n_filled, used_epsilons, dimensions
+    returns epsilons, n_filled, used_epsilons, dimensions (and the path+name of
+                 the save file if save_comparison_data is set to True)
     """
 
     n_filled=[] 
@@ -118,13 +119,15 @@ def box_counting_1d(points, epsilons = np.logspace(-5,-1,10), norm = 1., save_co
 
 def box_counting_1d_raster(boxes, n_samples=None, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
     """
-    boxes:       list indicating which box of size norm / len(boxes) is full (1) or empty (0)
+    boxes:       list indicating which box of size norm / len(boxes) is full (1) 
+                 or empty (0)
     epsilons:    list of box-sizes to consider (default: np.logspace(-5,-1,10))
     norm:        normalisation constant for coordinates (default : 1)
 
     version of box-counting for when the set is given as a list of boxes.
     
-    returns epsilons, n_filled, used_epsilons, dimensions
+    returns epsilons, n_filled, used_epsilons, dimensions (and the path+name of
+                 the save file if save_comparison_data is set to True)
     """
     input_box_size = norm / len(boxes)
     
@@ -142,7 +145,7 @@ def box_counting_1d_raster(boxes, n_samples=None, epsilons = np.logspace(-5,-1,1
                     box_counting_index = int(filled_idx * input_box_size / e)
                     filled_boxes[box_counting_index] = 1
                     if not filled_idx == len(boxes)-1:
-                        box_counting_index = int((filled_idx + .99) * input_box_size / e)
+                        box_counting_index = int((filled_idx + .999) * input_box_size / e)
                         filled_boxes[box_counting_index] = 1
             break
     
@@ -161,7 +164,7 @@ def box_counting_1d_raster(boxes, n_samples=None, epsilons = np.logspace(-5,-1,1
                 box_counting_index = int(filled_idx * epsilons[e_idx+start_index] / e)
                 new_filled_boxes[box_counting_index] = 1
                 if not filled_idx == len(filled_boxes)-1:
-                    box_counting_index = int((filled_idx + .99) * epsilons[e_idx+start_index] / e)
+                    box_counting_index = int((filled_idx + .999) * epsilons[e_idx+start_index] / e)
                     new_filled_boxes[box_counting_index] = 1
         
         n_filled += [sum(new_filled_boxes)]
@@ -199,12 +202,18 @@ def box_counting_1d_raster(boxes, n_samples=None, epsilons = np.logspace(-5,-1,1
 def grassberger_procaccia_1d(points, n_samples, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
     """
     points:      list of 1d coordinates making up the set under consideration
+    n_samples:   number of samples that were necessary to create "points". 
+                 Example: if 'points' is all randomly chosen initial conditions 
+                 that lead to trajectories staying longer than some t* then 
+                 n_samples is the number of all tested trajectories to find
+                 'points'.
     epsilons:    list of box-sizes to consider (default: np.logspace(-5,-1,10))
     norm:        normalisation constant for coordinates (default : 1)
     
     grassberger procaccia algorithm to calculate the correlation dimension.
     
-    returns epsilons, n_filled, used_epsilons, dimensions
+    returns epsilons, n_filled, used_epsilons, dimensions (and the path+name of
+                 the save file if save_comparison_data is set to True)
     """
     
     n_found = []
@@ -299,6 +308,13 @@ def output_function_evaluation_1d(output_function, min_step = pow(10,-5), alpha 
         steps+=[step]
 
 def gaio_stable_manifold_1d(pre_image, max_n_checked = pow(10, 5), required_resolution = pow(10,-5)):
+    """
+    use method described here:
+    http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.27.27
+    to approximate the set of boxes at the required resolution intersecting
+    the stable manifold
+    """
+
     n_checked = 0
 
     l_max = -int(log(required_resolution, 2)) - 1
@@ -347,6 +363,8 @@ def gaio_stable_manifold_1d(pre_image, max_n_checked = pow(10, 5), required_reso
         n_found = sum(stable)
         if n_found == old_n_found:
             break
+
+    return
             
 # ============================================================================
 # on the fly algorithms:
@@ -354,8 +372,15 @@ def gaio_stable_manifold_1d(pre_image, max_n_checked = pow(10, 5), required_reso
 
 def uncertainty_method_1d(indicator,n_required=10, n_max=100, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
     """
+    indicator:   a point x is considered uncertain if 
+                 indicator(x)!=indicator((x + e)%1). e is the current epsilon
+    n_required:  the number of uncertain points the algorithm tryes to reach 
+                 before going to the next epsilon.
+    n_max:       the maximum number of attempts before going to the next 
+                 epsilon.
+                 
     calculates the scaling of the ratio of points in an epsilon environment of
-    a point that lead to opposite results (one stays in the system, the otheri
+    a point that lead to opposite results (one stays in the system, the other
     leaves)
     """
     n_computed = 0
