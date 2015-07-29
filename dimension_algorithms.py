@@ -51,6 +51,7 @@ def raster(points, epsilon, dim=1, norm=[1]):
         for point in points:
             index = [int(point[i] / (norm[i] * epsilon[i])) for i in range(dim)]
             filled_boxes[index] = 1
+
     return epsilon, filled_boxes
 
 # ============================================================================
@@ -306,6 +307,7 @@ def output_function_evaluation_1d(output_function, min_step = pow(10,-5), alpha 
         data += [output_function(x)]
         i += 1
         steps+=[step]
+    return
 
 def gaio_stable_manifold_1d(pre_image, max_n_checked = pow(10, 5), required_resolution = pow(10,-5)):
     """
@@ -370,7 +372,7 @@ def gaio_stable_manifold_1d(pre_image, max_n_checked = pow(10, 5), required_reso
 # on the fly algorithms:
 # ============================================================================
 
-def uncertainty_method_1d(indicator,n_required=10, n_max=100, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
+def uncertainty_method_1d(indicator, epsilons = np.logspace(-5,-1,10), n_required=100, n_max=10000, norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
     """
     indicator:   a point x is considered uncertain if 
                  indicator(x)!=indicator((x + e)%1). e is the current epsilon
@@ -381,7 +383,11 @@ def uncertainty_method_1d(indicator,n_required=10, n_max=100, epsilons = np.logs
                  
     calculates the scaling of the ratio of points in an epsilon environment of
     a point that lead to opposite results (one stays in the system, the other
-    leaves)
+    leaves). this scaling allows us to calculate a fractal dimension of the set.
+
+    returns epsilons, uncertainty, used_epsilons, dimensions (and the path+name of
+                 the save file if save_comparison_data is set to True)
+                 uncertainty contains the fraction of uncertain points at each epsilon.
     """
     n_computed = 0
     uncertainty = []
@@ -426,26 +432,48 @@ def uncertainty_method_1d(indicator,n_required=10, n_max=100, epsilons = np.logs
     else:
         return epsilons, uncertainty, used_epsilons, dimensions
 
-def tree_bottom_up_1d(time_function, n_samples = 1000, t = 10, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
+def tree_bottom_up_1d(time_function, n_samples = 10000, t = 10, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
     """
+    time_function: returns the escape time for a initial condition
+    n_samples:     maximum number of points sampled. 
+    t:             minimum escape time for an initial condition to be part of
+                   the set. Or more general: we accept a sample x if 
+                   time_function(x)>=t
+
     Sample at most a given number of points in each box at the smallest epsilon:
+
+    returns epsilons, n_filled, used_epsilons, dimensions (and the path+name of
+                   the save file if save_comparison_data is set to True)
     """
     n_tested = 0
-    max_points = int(epsilons[0] * n_samples) + 1
-
     n_filled = np.zeros(len(epsilons))
 
     for e_idx, e in enumerate(epsilons):
         if e_idx == 0:
-            boxes = np.zeros(int(1 / e) + 1)
-            for box_index in xrange(len(boxes)):
-                for i in xrange(max_points):
-                    x = box_index * e + e * np.random.random()
-                    n_tested += 1
-                    time = time_function(x)
-                    if time >= t:
-                        boxes[box_index] = 1
-                        break
+            n_boxes = int(1 / e)
+            if n_boxes * e < norm:
+                n_boxes += 1
+            boxes = np.zeros(n_boxes)
+
+            all_filled = False
+            while n_tested < n_samples and all_filled == False:
+                #distribute samples on empty boxes:
+                n_empty = n_boxes - int(sum(boxes))
+                if n_empty > 0:
+                    max_points = max([int((n_samples - n_tested) / n_empty), 1])
+                else:
+                    max_points = 0
+                    all_filled = True
+
+                for box_index, filled in enumerate(boxes):
+                    if filled < 1:
+                        for i in xrange(max_points):
+                            x = (box_index + np.random.random()) * e
+                            n_tested += 1
+                            time = time_function(x)
+                            if time >= t:
+                                boxes[box_index] = 1
+                                break
             n_filled[e_idx] = sum(boxes)
         else:
             larger_boxes = np.zeros(int( 1 / e ) + 1)
@@ -475,6 +503,7 @@ def tree_bottom_up_1d(time_function, n_samples = 1000, t = 10, epsilons = np.log
                  "norm"         : norm,
                  "uuid"         : identifier,
                  "n_samples"    : n_samples,
+                 "n_tested"     : n_tested,
                  "n"            : n_filled,
                  "used_epsilons": used_epsilons,
                  "dimensions"   : dimensions}
@@ -486,71 +515,86 @@ def tree_bottom_up_1d(time_function, n_samples = 1000, t = 10, epsilons = np.log
         return epsilons, n_filled, used_epsilons, dimensions
 
 
-def tree_top_down_1d(time_function, n_samples = 1000, t = 10, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
+def tree_top_down_1d(time_function, n_samples = 10000, t = 10, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
     """
+    time_function: returns the escape time for a initial condition
+    n_samples:     maximum number of points sampled. 
+    t:             minimum escape time for an initial condition to be part of
+                   the set. Or more general: we accept a sample x if 
+                   time_function(x)>=t
+
     Sample at most a given number of points in each box at the largest epsilon and refine only filled boxes:
+
+    returns epsilons, n_filled, used_epsilons, dimensions (and the path+name of
+                   the save file if save_comparison_data is set to True)
     """
 
+    epsilons = epsilons[::-1]
     n_tested = 0
     n_filled = np.zeros(len(epsilons))
     
     found_points = []
 
-    for e_idx, e in enumerate(reversed(epsilons)):
-        checked_intervals = []
-        tested_this_epsilon = 0
-        max_points = int(e * n_samples)
+    for e_idx, e in enumerate(epsilons):
+
+        max_points = max([int(e * (n_samples-n_tested)),1])
+
         if e_idx == 0:
-            boxes = np.zeros(int(1 / e) + 1)
-            for box_index in xrange(len(boxes)):
+            n_boxes = int(1 / e)
+            if n_boxes * e < norm:
+                n_boxes += 1
+            boxes = np.zeros(n_boxes)
+
+            for box_index in xrange(n_boxes):
                 lower_bound = box_index * e
                 upper_bound = lower_bound + e
-                checked_intervals += [lower_bound,upper_bound]
                 
+                #make sure we don't sample outside [0,1]
                 delta=min([e, 1. - lower_bound])
                 
                 for i in xrange(max_points):
-                    x=lower_bound + delta * np.random.random()
-                    if not(0 <= x < 1):
-                        n_tested += 1
-                        tested_this_epsilon += 1
-                        time = time_function(x)
-                        if time >= t:
-                            boxes[box_index] = 1
-                            found_points += [x]
-                            break
+                    x = lower_bound + delta * np.random.random()
+                    n_tested += 1
+                    time = time_function(x)
+                    if time >= t:
+                        boxes[box_index] = 1
+                        found_points += [x]
+                        break
         else:
-            found_points = list(np.sort(found_points))
-            smaller_boxes = np.zeros(int(1 / e) + 1)
-            for box_index in range(len(smaller_boxes)):
-                lower_bound = box_index * e
-                upper_bound = lower_bound + e
-                lower_idx = int(box_index * e / epsilons[::-1][e_idx - 1])
-                upper_idx = min([int((box_index + 1) * e / epsilons[::-1][e_idx - 1]), len(boxes) - 1])
-                if boxes[lower_idx] > 0 or boxes[upper_idx] > 0:
-                    checked_intervals += [lower_bound, upper_bound]
-                    if len([x for x in found_points if lower_bound <= x < upper_bound]) > 0:
-                        smaller_boxes[box_index] = 1
-                    else:
+            n_boxes = int(1 / e)
+            if n_boxes * e < norm:
+                n_boxes += 1
+            smaller_boxes = np.zeros(n_boxes)
+
+            for x in found_points:
+                smaller_boxes[int(x/e)] = 1
+
+            for box_index, filled in enumerate(smaller_boxes):
+                if filled < 1:
+                    lower_bound = box_index * e
+                    upper_bound = lower_bound + e
+                    lower_idx = int(box_index * e / epsilons[e_idx - 1])
+                    upper_idx = min([int((box_index + 1) * e / epsilons[e_idx - 1]), len(boxes) - 1])
+                    if boxes[lower_idx] > 0 or boxes[upper_idx] > 0:
                         for i in xrange(max_points):
                             x = lower_bound + e * np.random.random()
                             n_tested += 1
-                            tested_this_epsilon += 1
                             time = time_function(x)
                             if time >= t:
                                 smaller_boxes[box_index] = 1
                                 found_points += [x]
                                 smaller_boxes[box_index] = 1
                                 break
-            boxes = smaller_boxes
+            boxes = smaller_boxes[:]
               
         n_filled[e_idx] = sum(boxes)
+
     dimensions = []
     used_epsilons = []
     for e_idx, e in enumerate(epsilons[:-1]):
         if n_filled[e_idx] > 0 and n_filled[e_idx + 1] > 0:
-            used_epsilons += [e]
-            dimensions+=[(log(n_filled[e_idx]) - log(n_filled[e_idx + 1])) / (log(e) - log(epsilons[e_idx + 1]))]
+            used_epsilons += [epsilons[e_idx + 1]]
+            dimensions+=[-(log(n_filled[e_idx]) - log(n_filled[e_idx + 1])) / (log(e) - log(epsilons[e_idx + 1]))]
 
     if save_comparison_data:
         identifier = uuid.uuid1().hex
@@ -563,6 +607,7 @@ def tree_top_down_1d(time_function, n_samples = 1000, t = 10, epsilons = np.logs
                  "norm"         : norm,
                  "uuid"         : identifier,
                  "n_samples"    : n_samples,
+                 "n_tested"     : n_tested,
                  "n"            : n_filled,
                  "used_epsilons": used_epsilons,
                  "dimensions"   : dimensions}
