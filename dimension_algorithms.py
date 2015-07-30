@@ -58,7 +58,7 @@ def raster(points, epsilon, dim=1, norm=[1]):
 # algorithms acting upon existing sets:
 # ============================================================================
 
-def box_counting_1d(points, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
+def box_counting_1d(points, t = None, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = "", save_input_data = True):
     """
     points:      list of 1d coordinates making up the set under consideration
     epsilons:    list of box-sizes to consider (default: np.logspace(-5,-1,10))
@@ -102,6 +102,9 @@ def box_counting_1d(points, epsilons = np.logspace(-5,-1,10), norm = 1., save_co
 
         file_name = "box_counting_1d---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
 
+        if not save_input_data:
+            points = None
+
         stuff = {"data"          : points,
                  "epsilons"      : epsilons,
                  "data_string"   : data_string,
@@ -109,6 +112,7 @@ def box_counting_1d(points, epsilons = np.logspace(-5,-1,10), norm = 1., save_co
                  "uuid"          : identifier,
                  "n_samples"     : n_samples,
                  "n"             : n_filled,
+                 "t"             : t,
                  "used_epsilons" : used_epsilons,
                  "dimensions"    : dimensions}
                         
@@ -118,7 +122,7 @@ def box_counting_1d(points, epsilons = np.logspace(-5,-1,10), norm = 1., save_co
     else:
         return epsilons, n_filled, used_epsilons, dimensions
 
-def box_counting_1d_raster(boxes, n_samples=None, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
+def box_counting_1d_raster(boxes, t = None, n_samples=None, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = "", save_input_data = True):
     """
     boxes:       list indicating which box of size norm / len(boxes) is full (1) 
                  or empty (0)
@@ -183,6 +187,9 @@ def box_counting_1d_raster(boxes, n_samples=None, epsilons = np.logspace(-5,-1,1
 
         file_name = "box_counting_1d_raster---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
         data_file_name = identifier+".npy"
+        
+        if not save_input_data:
+            boxes = None
 
         stuff = {"data"         : boxes,
                  "epsilons"     : epsilons[start_index:],
@@ -191,6 +198,7 @@ def box_counting_1d_raster(boxes, n_samples=None, epsilons = np.logspace(-5,-1,1
                  "uuid"         : identifier,
                  "n_samples"    : n_samples,
                  "n"            : n_filled,
+                 "t"            : t,
                  "used_epsilons": used_epsilons,
                  "dimensions"   : dimensions}
                         
@@ -200,7 +208,7 @@ def box_counting_1d_raster(boxes, n_samples=None, epsilons = np.logspace(-5,-1,1
     else:
         return epsilons[start_index:], n_filled, used_epsilons, dimensions
 
-def grassberger_procaccia_1d(points, n_samples, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = ""):
+def grassberger_procaccia_1d(points, n_samples, t = None, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = "", save_input_data = True):
     """
     points:      list of 1d coordinates making up the set under consideration
     n_samples:   number of samples that were necessary to create "points". 
@@ -242,6 +250,9 @@ def grassberger_procaccia_1d(points, n_samples, epsilons = np.logspace(-5,-1,10)
 
         file_name = "grassberger_procaccia_1d---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
 
+        if not save_input_data:
+            points = None
+
         stuff = {"data"         : points,
                  "epsilons"     : epsilons,
                  "data_string"  : data_string,
@@ -249,6 +260,7 @@ def grassberger_procaccia_1d(points, n_samples, epsilons = np.logspace(-5,-1,10)
                  "uuid"         : identifier,
                  "n_samples"    : n_samples,
                  "n"            : n_found,
+                 "t"            : t,
                  "used_epsilons": used_epsilons,
                  "dimensions"   : dimensions}
                         
