@@ -45,7 +45,7 @@ def test_box_counting():
     
     epsilons = np.logspace(-5,-1,10)
 
-    es, nfs, ues, dims = dimension_algorithms.box_counting_1d(test_X, epsilons)
+    es, nfs, ues, dims = dimension_algorithms.box_counting_1d(test_X, 10**5, epsilons=epsilons)
 
     np.testing.assert_almost_equal(epsilons, es)
     np.testing.assert_almost_equal(test_used_epsilons, ues)
@@ -87,7 +87,7 @@ def test_io():
     test_X = pickle.load(open('./test_data/test_data_box_counting_X.p', 'r'))
     testmap = maps.TentMap(.62, 3)
 
-    e, n, ue, d, f = dimension_algorithms.box_counting_1d(test_X, save_comparison_data = True, data_dir = "/tmp/", data_string = "*T*E*S*T*")
+    e, n, ue, d, f = dimension_algorithms.box_counting_1d(test_X, 10**5, save_comparison_data = True, data_dir = "/tmp/", data_string = "*T*E*S*T*")
     saved_data = pickle.load(open(f, "r"))
     np.testing.assert_equal(saved_data["data"],test_X)
     np.testing.assert_equal(saved_data["epsilons"],e)

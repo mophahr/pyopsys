@@ -58,7 +58,7 @@ def raster(points, epsilon, dim=1, norm=[1]):
 # algorithms acting upon existing sets:
 # ============================================================================
 
-def box_counting_1d(points, t = None, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = "", save_input_data = True):
+def box_counting_1d(points, n_samples, t = None, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = "", save_input_data = True):
     """
     points:      list of 1d coordinates making up the set under consideration
     epsilons:    list of box-sizes to consider (default: np.logspace(-5,-1,10))
@@ -98,7 +98,6 @@ def box_counting_1d(points, t = None, epsilons = np.logspace(-5,-1,10), norm = 1
     
     if save_comparison_data:
         identifier = uuid.uuid1().hex
-        n_samples = len(points)
 
         file_name = "box_counting_1d---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
 
