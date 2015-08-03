@@ -226,16 +226,23 @@ def grassberger_procaccia_1d(points, n_samples, t = None, epsilons = np.logspace
     
     n_found = []
     n_points = len(points)
+    skip = False
     for e in epsilons:
         close_points = 0
         set_size = 0
-        for x_idx,x in enumerate(points):
-            for j in xrange(1, n_points - x_idx):
-                if abs(x - points[x_idx + j]) <= e:
-                    close_points += 1
-                else:
-                    break
-        n_found += [(close_points * 2 / (n_points * (n_points - 1)))]
+        if len(n_found) > 0:
+            if n_found[-1] == 0:
+                n_found += [0]
+                skip = True
+
+        if not skip:
+            for x_idx,x in enumerate(points):
+                for j in xrange(1, n_points - x_idx):
+                    if abs(x - points[x_idx + j]) <= e:
+                        close_points += 1
+                    else:
+                        break
+            n_found += [(close_points * 2 / (n_points * (n_points - 1)))]
     
     dimensions = []
     used_epsilons = []
