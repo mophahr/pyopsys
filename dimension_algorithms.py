@@ -99,7 +99,7 @@ def box_counting_1d(points, n_samples, t = None, epsilons = np.logspace(-5,-1,10
     if save_comparison_data:
         identifier = uuid.uuid1().hex
 
-        file_name = "box_counting_1d---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
+        file_name = "box_counting_1d---"+data_string+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
 
         if not save_input_data:
             points = None
@@ -184,7 +184,7 @@ def box_counting_1d_raster(boxes, t = None, n_samples=None, epsilons = np.logspa
     if save_comparison_data:
         identifier = uuid.uuid1().hex
 
-        file_name = "box_counting_1d_raster---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
+        file_name = "box_counting_1d_raster---"+data_string+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
         data_file_name = identifier+".npy"
         
         if not save_input_data:
@@ -254,7 +254,7 @@ def grassberger_procaccia_1d(points, n_samples, t = None, epsilons = np.logspace
     if save_comparison_data:
         identifier = uuid.uuid1().hex
 
-        file_name = "grassberger_procaccia_1d---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
+        file_name = "grassberger_procaccia_1d---"+data_string+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
 
         if not save_input_data:
             points = None
@@ -431,7 +431,7 @@ def uncertainty_method_1d(indicator, epsilons = np.logspace(-5,-1,10), n_require
     if save_comparison_data:
         identifier = uuid.uuid1().hex
 
-        file_name = "uncertainty_method_1d---"+"data_string"+"---n_computed__{}".format(n_computed)+"---"+identifier+".p"
+        file_name = "uncertainty_method_1d---"+data_string+"---n_computed__{}".format(n_computed)+"---"+identifier+".p"
 
         stuff = {"epsilons"     : list(epsilons),
                  "data_string"  : data_string,
@@ -513,7 +513,7 @@ def tree_bottom_up_1d(time_function, n_samples = 10000, t = 10, epsilons = np.lo
     if save_comparison_data:
         identifier = uuid.uuid1().hex
 
-        file_name = "tree_bottom_up_1d---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
+        file_name = "tree_bottom_up_1d---"+data_string+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
 
         stuff = {"epsilons"     : epsilons,
                  "data_string"  : data_string,
@@ -617,7 +617,7 @@ def tree_top_down_1d(time_function, n_samples = 10000, t = 10, epsilons = np.log
     if save_comparison_data:
         identifier = uuid.uuid1().hex
 
-        file_name = "tree_top_down_1d---"+"data_string"+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
+        file_name = "tree_top_down_1d---"+data_string+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
 
         stuff = {"epsilons"     : epsilons,
                  "data_string"  : data_string,
