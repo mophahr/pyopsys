@@ -465,43 +465,46 @@ def tree_bottom_up_1d(time_function, n_samples = 10000, t = 10, epsilons = np.lo
     """
     n_tested = 0
     n_filled = np.zeros(len(epsilons))
+    first_epsilon = True
 
     for e_idx, e in enumerate(epsilons):
-        if e_idx == 0:
-            n_boxes = int(1 / e)
-            if n_boxes * e < norm:
-                n_boxes += 1
-            boxes = np.zeros(n_boxes)
+        if not 1/epsilons[min([e_idx+1, len(epsilons)-1])] > n_samples:
+            if first_epsilon:
+                n_boxes = int(1 / e)
+                if n_boxes * e < norm:
+                    n_boxes += 1
+                boxes = np.zeros(n_boxes)
 
-            all_filled = False
-            while n_tested < n_samples and all_filled == False:
-                #distribute samples on empty boxes:
-                n_empty = n_boxes - int(sum(boxes))
-                if n_empty > 0:
-                    max_points = max([int((n_samples - n_tested) / n_empty), 1])
-                else:
-                    max_points = 0
-                    all_filled = True
+                all_filled = False
+                while n_tested < n_samples and all_filled == False:
+                    #distribute samples on empty boxes:
+                    n_empty = n_boxes - int(sum(boxes))
+                    if n_empty > 0:
+                        max_points = max([int((n_samples - n_tested) / n_empty), 1])
+                    else:
+                        max_points = 0
+                        all_filled = True
 
-                for box_index, filled in enumerate(boxes):
-                    if filled < 1:
-                        for i in xrange(max_points):
-                            x = (box_index + np.random.random()) * e
-                            n_tested += 1
-                            time = time_function(x)
-                            if time >= t:
-                                boxes[box_index] = 1
-                                break
-            n_filled[e_idx] = sum(boxes)
-        else:
-            larger_boxes = np.zeros(int( 1 / e ) + 1)
-            for box_index in xrange(len(larger_boxes)):
-                lower_idx = int(box_index       * e / epsilons[e_idx-1])
-                upper_idx = int((box_index + 1) * e / epsilons[e_idx-1])
-                if sum(boxes[lower_idx:upper_idx + 2]) > 0:
-                    larger_boxes[box_index] = 1
-            n_filled[e_idx] = sum(larger_boxes)
-            boxes = larger_boxes
+                    for box_index, filled in enumerate(boxes):
+                        if filled < 1:
+                            for i in xrange(max_points):
+                                x = (box_index + np.random.random()) * e
+                                n_tested += 1
+                                time = time_function(x)
+                                if time >= t:
+                                    boxes[box_index] = 1
+                                    break
+                n_filled[e_idx] = sum(boxes)
+                first_epsilon = False
+            else:
+                larger_boxes = np.zeros(int( 1 / e ) + 1)
+                for box_index in xrange(len(larger_boxes)):
+                    lower_idx = int(box_index       * e / epsilons[e_idx-1])
+                    upper_idx = int((box_index + 1) * e / epsilons[e_idx-1])
+                    if sum(boxes[lower_idx:upper_idx + 2]) > 0:
+                        larger_boxes[box_index] = 1
+                n_filled[e_idx] = sum(larger_boxes)
+                boxes = larger_boxes
     
     dimensions = []
     used_epsilons = []
@@ -555,57 +558,58 @@ def tree_top_down_1d(time_function, n_samples = 10000, t = 10, epsilons = np.log
 
     for e_idx, e in enumerate(epsilons):
 
-        max_points = max([int(e * (n_samples-n_tested)),1])
+        if n_tested < n_samples:
+            max_points = max([int(e * (n_samples-n_tested)),1])
 
-        if e_idx == 0:
-            n_boxes = int(1 / e)
-            if n_boxes * e < norm:
-                n_boxes += 1
-            boxes = np.zeros(n_boxes)
+            if e_idx == 0:
+                n_boxes = int(1 / e)
+                if n_boxes * e < norm:
+                    n_boxes += 1
+                boxes = np.zeros(n_boxes)
 
-            for box_index in xrange(n_boxes):
-                lower_bound = box_index * e
-                upper_bound = lower_bound + e
-                
-                #make sure we don't sample outside [0,1]
-                delta=min([e, 1. - lower_bound])
-                
-                for i in xrange(max_points):
-                    x = lower_bound + delta * np.random.random()
-                    n_tested += 1
-                    time = time_function(x)
-                    if time >= t:
-                        boxes[box_index] = 1
-                        found_points += [x]
-                        break
-        else:
-            n_boxes = int(1 / e)
-            if n_boxes * e < norm:
-                n_boxes += 1
-            smaller_boxes = np.zeros(n_boxes)
-
-            for x in found_points:
-                smaller_boxes[int(x/e)] = 1
-
-            for box_index, filled in enumerate(smaller_boxes):
-                if filled < 1:
+                for box_index in xrange(n_boxes):
                     lower_bound = box_index * e
                     upper_bound = lower_bound + e
-                    lower_idx = int(box_index * e / epsilons[e_idx - 1])
-                    upper_idx = min([int((box_index + 1) * e / epsilons[e_idx - 1]), len(boxes) - 1])
-                    if boxes[lower_idx] > 0 or boxes[upper_idx] > 0:
-                        for i in xrange(max_points):
-                            x = lower_bound + e * np.random.random()
-                            n_tested += 1
-                            time = time_function(x)
-                            if time >= t:
-                                smaller_boxes[box_index] = 1
-                                found_points += [x]
-                                smaller_boxes[box_index] = 1
-                                break
-            boxes = smaller_boxes[:]
-              
-        n_filled[e_idx] = sum(boxes)
+                    
+                    #make sure we don't sample outside [0,1]
+                    delta=min([e, 1. - lower_bound])
+                    
+                    for i in xrange(max_points):
+                        x = lower_bound + delta * np.random.random()
+                        n_tested += 1
+                        time = time_function(x)
+                        if time >= t:
+                            boxes[box_index] = 1
+                            found_points += [x]
+                            break
+            else:
+                n_boxes = int(1 / e)
+                if n_boxes * e < norm:
+                    n_boxes += 1
+                smaller_boxes = np.zeros(n_boxes)
+
+                for x in found_points:
+                    smaller_boxes[int(x/e)] = 1
+
+                for box_index, filled in enumerate(smaller_boxes):
+                    if filled < 1:
+                        lower_bound = box_index * e
+                        upper_bound = lower_bound + e
+                        lower_idx = int(box_index * e / epsilons[e_idx - 1])
+                        upper_idx = min([int((box_index + 1) * e / epsilons[e_idx - 1]), len(boxes) - 1])
+                        if boxes[lower_idx] > 0 or boxes[upper_idx] > 0:
+                            for i in xrange(max_points):
+                                x = lower_bound + e * np.random.random()
+                                n_tested += 1
+                                time = time_function(x)
+                                if time >= t:
+                                    smaller_boxes[box_index] = 1
+                                    found_points += [x]
+                                    smaller_boxes[box_index] = 1
+                                    break
+                boxes = smaller_boxes[:]
+                  
+            n_filled[e_idx] = sum(boxes)
 
     dimensions = []
     used_epsilons = []
