@@ -280,7 +280,7 @@ def grassberger_procaccia_1d(points, n_samples, t = None, epsilons = np.logspace
 # algorithms for creating the set:
 # ============================================================================
 
-def output_function_evaluation_1d(output_function, min_step = pow(10,-5), alpha = 3, t = 100, max_step_factor =2, delta = .000005):
+def output_function_evaluation_1d(output_function, min_step = pow(10,-5), alpha = 3, t = 100, max_step_factor =2, delta = .000005, beta=1):
     """
     implementation of the method from 
     http://journals.aps.org/prl/abstract/10.1103/PhysRevLett.86.2778
@@ -325,7 +325,11 @@ def output_function_evaluation_1d(output_function, min_step = pow(10,-5), alpha 
         data += [output_function(x)]
         i += 1
         steps+=[step]
-    return
+    
+    data_reduced = [t for i,t in enumerate(data[1:]) if abs(data[i]-data[i-1])>=beta]
+    x_reduced = [x for i,x in enumerate(X[1:]) if abs(data[i]-data[i-1])>=beta]
+    
+    return data_reduced, x_reduced
 
 def gaio_stable_manifold_1d(pre_image, max_n_checked = pow(10, 5), required_resolution = pow(10,-5)):
     """
