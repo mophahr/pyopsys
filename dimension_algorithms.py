@@ -640,3 +640,91 @@ def tree_top_down_1d(time_function, n_samples = 10000, t = 10, epsilons = np.log
     else:
         return epsilons, n_filled, used_epsilons, dimensions
 
+            
+# ============================================================================
+# on the fly algorithms:
+# ============================================================================
+def multifractal_box_counting_1d(points, intensities,q, n_samples, t = None, epsilons = np.logspace(-5,-1,10), norm = 1., save_comparison_data = False, data_dir = "/tmp/", data_string = "", save_input_data = True):
+    """
+    points:      list of 1d coordinates making up the set under consideration
+    epsilons:    list of box-sizes to consider (default: np.logspace(-5,-1,10))
+    norm:        normalisation constant for coordinates (default : 1)
+
+    most basic version of box-counting.
+    It calculates the number of "epsilons"-sized boxes intesecting a set
+    of points.
+    
+    returns epsilons, n_filled, used_epsilons, dimensions (and the path+name of
+                 the save file if save_comparison_data is set to True)
+    """
+
+    q_sums=[] 
+
+    def q_sum(q,mu):
+        if q==0:
+            return sum([1 for m in mu if m>0])
+        else:
+            return sum([pow(m,q) for m in mu])
+    
+    #box-counting:
+    for e_idx, e in enumerate(epsilons):
+        n_boxes = int(1 / e)
+        if n_boxes * e < norm:
+            n_boxes += 1
+        measures = np.zeros(n_boxes)
+        n_points_in_box = np.zeros(n_boxes)
+        
+        for x_idx, x in enumerate(points):
+            # mark boxes that contain points 
+            box_counting_index = int(x / e)
+            measures[box_counting_index] += intensities[x_idx]
+            n_points_in_box[box_counting_index] += 1
+
+        for I_idx, I in enumerate(measures):
+            if n_points_in_box[I_idx]==0:
+                measures[I_idx]==0
+            else:
+                measures[I_idx] = measures[I_idx] / n_points_in_box[I_idx]
+
+        normaliser = sum(measures)
+        measures = measures/normaliser
+        
+        q_sums += [q_sum(q,measures)]
+    
+    dimensions=[]
+    used_epsilons=[]
+    for e_idx,e in enumerate(epsilons[:-1]):
+        if q_sums[e_idx] > 0 and q_sums[e_idx+1] > 0:
+            used_epsilons += [e]
+            if q==1:
+                dimensions += [1]
+            else:
+                dimensions += [(-(log(q_sums[e_idx])- log(q_sums[e_idx+1])) / (log(e) - log(epsilons[e_idx + 1])))/(1-q)]
+    
+    if save_comparison_data:
+        """
+        identifier = uuid.uuid1().hex
+
+        file_name = "box_counting_1d---"+data_string+"---n_samples__{}".format(n_samples)+"---"+identifier+".p"
+
+        if not save_input_data:
+            points = None
+
+        stuff = {"data"          : points,
+                 "epsilons"      : epsilons,
+                 "data_string"   : data_string,
+                 "norm"          : norm,
+                 "uuid"          : identifier,
+                 "n_samples"     : n_samples,
+                 "n"             : n_filled,
+                 "t"             : t,
+                 "used_epsilons" : used_epsilons,
+                 "dimensions"    : dimensions}
+                        
+        pickle.dump(stuff, open(data_dir+file_name, "w"))
+
+        return epsilons, n_filled, used_epsilons, dimensions, data_dir+file_name
+        """
+        pass
+    else:
+        return epsilons, q_sums, used_epsilons, dimensions
