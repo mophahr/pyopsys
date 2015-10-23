@@ -280,13 +280,14 @@ def grassberger_procaccia_1d(points, n_samples, t = None, epsilons = np.logspace
 # algorithms for creating the set:
 # ============================================================================
 
-def output_function_evaluation_1d(output_function, min_step = pow(10,-5), alpha = 3, t = 100, max_step_factor =2, delta = .000005):
+def output_function_evaluation_1d(output_function, epsilons = np.logspace(-5,-1,10), alpha = 2, t = 100, max_step_factor = 3, delta = .000005, beta=1, use_simple_box_counting = False):
     """
     implementation of the method from 
     http://journals.aps.org/prl/abstract/10.1103/PhysRevLett.86.2778
 
     for a detailed desription of the parameters please heck out said paper.
     """
+    min_step = epsilons[0]
     max_step = max_step_factor * min_step
     x = min_step
     step = x
@@ -294,38 +295,36 @@ def output_function_evaluation_1d(output_function, min_step = pow(10,-5), alpha 
     data = [output_function(x) for x in X]
     i = 1
 
-    #array to track which step [min, adaptive, max] was used: to check if 
-    #parameter choice was ok
-    used = [0,0,0]
-    
-    temps = []
-    steps = []
-    slopes = []
     
     while x < 1:
         slope = (data[i] - data[i - 1]) / step
-        slopes += [slope]
         if slope == 0:
-            step = max_step
-            used[2] += 1
+            temp = alpha * step
         else:
             temp = min([delta / abs(slope), alpha * step])
-            temps += [delta / abs(slope)]
-            if temp < min_step:
-                step = min_step
-                used[0] += 1
-            elif temp > max_step:
-                step = max_step
-                used[2] += 1
-            else:
-                step = temp
-                used[1] += 1
+
+        if temp < min_step:
+            step = min_step
+        elif temp > max_step:
+            step = max_step
+        else:
+            step = temp
+
         x=min([x + step,1])
         X += [x]
         data += [output_function(x)]
         i += 1
-        steps+=[step]
-    return
+    
+    data_reduced = [t for i,t in enumerate(data[1:]) if abs(data[i]-data[i-1])>=beta]
+    x_reduced = [x for i,x in enumerate(X[1:]) if abs(data[i]-data[i-1])>=beta]
+
+    if not use_simple_box_counting:
+        epsilons, n_found, used_epsilons, dimensions = grassberger_procaccia_1d(x_reduced, n_samples=len(x_reduced), t = None, epsilons = epsilons, norm = 1, save_comparison_data = False, data_dir = "/tmp/", data_string = "", save_input_data = False)
+    else:
+        pass
+        #should return box counting later
+    
+    return x_reduced, data_reduced, epsilons, n_found, used_epsilons, dimensions
 
 def gaio_stable_manifold_1d(pre_image, max_n_checked = pow(10, 5), required_resolution = pow(10,-5)):
     """
