@@ -100,7 +100,7 @@ class Stadium(Billiard):
             s_not_normalised = offset + acos((self.radius - y) / self.radius) * self.radius
         else:
             #right half circle
-            offset = pi * self.radius + 2 * self.length
+            offset = pi * self.radius + 1.5 * self.length
             s_not_normalised = offset + acos((y - self.radius) / self.radius) * self.radius
 
         return s_not_normalised/self.boundary_length
